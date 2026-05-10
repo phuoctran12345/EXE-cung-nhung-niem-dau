@@ -136,7 +136,7 @@ export default function SearchFloatingBar() {
 
       {/* Search Button */}
       <button 
-        onClick={handleSearch}
+        onClick={() => handleSearch()}
         className="bg-[#F5A524] hover:bg-[#D98C1C] text-white px-8 py-4 rounded-full font-bold flex items-center justify-center gap-2 transition-colors ml-2 mt-4 md:mt-0 w-full md:w-auto"
       >
         Search <MagnifyingGlass size={18} weight="bold" />

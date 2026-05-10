@@ -157,10 +157,10 @@ export default function Home() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 px-2">
               {[
-                { id: 1, title: "Ha Long Bay", loc: "Quang Ninh", price: "$150.00", img: "https://picsum.photos/seed/halongbay/600/400", duration: "2 days 1 night" },
-                { id: 2, title: "Hoi An Acient Town", loc: "Da Nang", price: "$45.00", img: "https://picsum.photos/seed/hoian/600/400", duration: "1 day" },
-                { id: 3, title: "Lung Cu Flag Tower", loc: "Ha Giang", price: "$35.00", img: "https://picsum.photos/seed/lungcu/600/400", duration: "2 hours" },
-                { id: 4, title: "Phu Quoc Island", loc: "Phu Quoc", price: "$210.00", img: "https://picsum.photos/seed/phuquoc/600/400", duration: "3 days 2 night" }
+                { id: 1, title: "Ha Long Bay", location: "Quang Ninh", price: "$150.00", img: "https://picsum.photos/seed/halongbay/600/400", duration: "2 days 1 night" },
+                { id: 2, title: "Hoi An Acient Town", location: "Da Nang", price: "$45.00", img: "https://picsum.photos/seed/hoian/600/400", duration: "1 day" },
+                { id: 3, title: "Lung Cu Flag Tower", location: "Ha Giang", price: "$35.00", img: "https://picsum.photos/seed/lungcu/600/400", duration: "2 hours" },
+                { id: 4, title: "Phu Quoc Island", location: "Phu Quoc", price: "$210.00", img: "https://picsum.photos/seed/phuquoc/600/400", duration: "3 days 2 night" }
               ].map((item) => (
                 <TourCard key={item.id} {...item} />
               ))}
