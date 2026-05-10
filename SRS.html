@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Travelofy - Functional Specification Prototype</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Sidebar điều hướng các chức năng trong SRS */
+        .sidebar {
+            width: 280px;
+            background: #2c3e50;
+            color: #fff;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .sidebar h2 {
+            font-size: 1.2rem;
+            border-bottom: 1px solid #444;
+            padding-bottom: 10px;
+        }
+
+        .sidebar ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .sidebar li {
+            padding: 10px;
+            cursor: pointer;
+            border-bottom: 1px solid #34495e;
+            transition: 0.3s;
+        }
+
+        .sidebar li:hover {
+            background: #34495e;
+            color: #3498db;
+        }
+
+        .sidebar .group-title {
+            font-weight: bold;
+            color: #95a5a6;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            margin-top: 20px;
+        }
+
+        /* Nội dung mô phỏng */
+        .main-content {
+            flex: 1;
+            padding: 40px;
+            background: #f9f9f9;
+            overflow-y: auto;
+        }
+
+        .canvas {
+            background: #fff;
+            border: 2px dashed #ccc;
+            padding: 20px;
+            min-height: 500px;
+            border-radius: 8px;
+        }
+
+        .annotation {
+            background: #fff3cd;
+            border: 1px solid #ffeeba;
+            padding: 10px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            color: #856404;
+        }
+
+        .screen-title {
+            margin-top: 0;
+            color: #2980b9;
+        }
+
+        /* UI Components */
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: #3498db;
+            color: #fff;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            padding: 8px;
+            margin: 8px 0;
+            border: 1px solid #ddd;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="sidebar">
+        <h2>SRS Chức Năng</h2>
+
+        <div class="group-title">Khách hàng (Customer)</div>
+        <ul>
+            <li onclick="render('fixed-search')">UC-08: Tìm kiếm Tour cố định</li>
+            <li onclick="render('private-req')">UC-XX: Yêu cầu Tour Private</li>
+            <li onclick="render('booking-pay')">UC-11/19: Đặt chỗ & Thanh toán</li>
+        </ul>
+
+        <div class="group-title">Nhà cung cấp (Owner)</div>
+        <ul>
+            <li onclick="render('tour-mgmt')">UC-20: Quản lý chương trình Tour</li>
+            <li onclick="render('request-mgmt')">UC-XX: Tiếp nhận yêu cầu Private</li>
+        </ul>
+
+        <div class="group-title">Hệ thống (System)</div>
+        <ul>
+            <li onclick="render('login')">UC-01: Đăng nhập/Đăng ký</li>
+        </ul>
+    </div>
+
+    <div class="main-content">
+        <div id="display-area">
+            <div class="annotation">
+                <strong>Ghi chú đặt tả:</strong> Chọn một chức năng ở thanh bên trái để xem mô phỏng giao diện và luồng
+                xử lý tương ứng trong tài liệu SRS[cite: 68, 150].
+            </div>
+            <div class="canvas">
+                <h3 style="text-align:center; color:#ccc; margin-top:150px;">VÙNG MÔ PHỎNG GIAO DIỆN (MOCKUP CANVAS)
+                </h3>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const screens = {
+            'fixed-search': `
+        <h2 class="screen-title">Mô phỏng UC-08: Tìm kiếm Tour cố định</h2>
+        <div class="annotation">Luồng: Khách nhập điểm đến -> Hệ thống lọc từ DB -> Hiển thị danh sách Tour có sẵn ngày khởi hành[cite: 105, 113].</div>
+        <div class="canvas">
+            <div style="display:flex; gap:10px;">
+                <input type="text" placeholder="Nhập điểm đến (vd: Đà Nẵng)">
+                <input type="date">
+                <button class="btn btn-primary">Tìm kiếm</button>
+            </div>
+            <div style="margin-top:20px; display:flex; gap:15px;">
+                <div style="border:1px solid #ddd; padding:10px; width:200px;">
+                    <div style="background:#eee; height:100px;"></div>
+                    <h4>Tour Bà Nà 1 Ngày</h4>
+                    <p>Giá: 1.200.000đ</p>
+                </div>
+            </div>
+        </div>`,
+
+            'private-req': `
+        <h2 class="screen-title">Mô phỏng Chức năng: Yêu cầu Tour Private (Custom)</h2>
+        <div class="annotation">Mô tả: Cho phép khách tự thiết kế lịch trình. Dữ liệu sẽ đổ về bảng Custom_Tour_Request[cite: 52, 57, 100].</div>
+        <div class="canvas">
+            <label>Điểm khởi hành & Kết thúc:</label>
+            <input type="text" placeholder="Vd: Sài Gòn - Phú Quốc">
+            <label>Ngày dự kiến:</label>
+            <input type="date">
+            <label>Mô tả lịch trình mong muốn:</label>
+            <textarea rows="4" placeholder="Tôi muốn đi cano riêng, ăn tối trên bãi biển..."></textarea>
+            <button class="btn btn-primary">Gửi yêu cầu báo giá (MSG29)</button>
+        </div>`,
+
+            'request-mgmt': `
+        <h2 class="screen-title">Mô phỏng Quản lý yêu cầu Private (Dành cho Owner)</h2>
+        <div class="annotation">Quy trình: Owner nhận yêu cầu -> Tính toán -> Gửi báo giá ngược lại cho Customer[cite: 63, 111].</div>
+        <div class="canvas">
+            <h3>Danh sách yêu cầu mới</h3>
+            <table>
+                <tr><th>ID</th><th>Khách hàng</th><th>Lịch trình</th><th>Trạng thái</th></tr>
+                <tr><td>#PR-01</td><td>Trần Hồng Phước</td><td>Đà Lạt 3N2Đ</td><td><b style="color:orange">Chờ báo giá</b></td></tr>
+            </table>
+            <div style="margin-top:15px;">
+                <label>Nhập giá đề xuất cho khách:</label>
+                <input type="number" placeholder="VNĐ">
+                <button class="btn btn-primary">Gửi báo giá</button>
+            </div>
+        </div>`
+        };
+
+        function render(screenKey) {
+            document.getElementById('display-area').innerHTML = screens[screenKey];
+        }
+    </script>
+
+</body>
+
+</html>
