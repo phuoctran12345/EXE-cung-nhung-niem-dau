@@ -21,7 +21,8 @@ export default function Header() {
         <div className="hidden lg:flex items-center gap-10 text-[15px] font-medium">
           <Link href="/" className={`text-white relative after:content-[''] after:absolute after:w-full after:h-[2px] ${isHome ? 'after:bg-white' : 'after:bg-transparent hover:after:bg-[#38BDF8]'} after:-bottom-2 after:left-0 transition-all`}>Home</Link>
           <Link href="/tours" className={`text-white relative after:content-[''] after:absolute after:w-full after:h-[2px] ${pathname?.startsWith('/tours') || pathname?.startsWith('/tour/') ? 'after:bg-[#38BDF8]' : 'after:bg-transparent hover:after:bg-[#38BDF8]'} after:-bottom-2 after:left-0 transition-all`}>Available Tours</Link>
-          <a href="#" className="text-white/80 hover:text-white transition-colors">Private Tour</a>
+          {/* Liên kết tới trang Private Tour */}
+            <Link href="/privateTour" className="text-white/80 hover:text-white transition-colors">Private Tour</Link>
           <a href="#" className="text-white/80 hover:text-white transition-colors">Local Tour</a>
         </div>
         

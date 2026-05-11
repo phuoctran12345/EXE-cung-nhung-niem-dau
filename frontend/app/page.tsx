@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import SearchFloatingBar from "./components/SearchFloatingBar";
@@ -31,43 +32,144 @@ import {
   PinterestLogo
 } from "@phosphor-icons/react";
 
+// Định nghĩa danh sách các địa điểm du lịch nổi tiếng tại Việt Nam cho banner chính
+const destinations = [
+  {
+    title: "Ba Na Hills",
+    titlePart1: "BA NA",
+    titlePart2: "Hills",
+    location: "Da Nang, Viet Nam",
+    description: "Ba Na Hills is a famous mountaintop resort in Da Nang, renowned for its iconic Golden Bridge, French Village, and scenic cable car system.",
+    bgImage: "/hero-bg.png",
+    cardImage: "/hero-bg.png"
+  },
+  {
+    title: "Hoi An Town",
+    titlePart1: "HOI AN",
+    titlePart2: "Town",
+    location: "Quang Nam, Viet Nam",
+    description: "Hoi An Ancient Town is an exceptionally well-preserved example of a Southeast Asian trading port, famous for its lantern-lit nights and unique heritage.",
+    bgImage: "/10.png",
+    cardImage: "/10.png"
+  },
+  {
+    title: "Ha Giang Karst",
+    titlePart1: "HA GIANG",
+    titlePart2: "Karst",
+    location: "Ha Giang, Viet Nam",
+    description: "Ha Giang features majestic limestone peaks, deep valleys, winding mountain passes, and the rich cultural heritage of local ethnic groups.",
+    bgImage: "/9.png",
+    cardImage: "/9.png"
+  },
+  {
+    title: "Imperial Hue",
+    titlePart1: "HUE",
+    titlePart2: "Citadel",
+    location: "Thua Thien Hue, Viet Nam",
+    description: "Hue was the imperial capital of the Nguyen Dynasty, globally renowned for its majestic citadel, ancient royal tombs, and poetic scenery.",
+    bgImage: "/8.png",
+    cardImage: "/8.png"
+  },
+  {
+    title: "Nha Trang Bay",
+    titlePart1: "NHA TRANG",
+    titlePart2: "Bay",
+    location: "Khanh Hoa, Viet Nam",
+    description: "Nha Trang is a beautiful coastal city known for its pristine sandy beaches, rich marine biodiversity, scuba diving, and tropical islands.",
+    bgImage: "/14.png",
+    cardImage: "/14.png"
+  }
+];
+
 export default function Home() {
+  // Chỉ số của địa điểm hiện tại đang được hiển thị trên banner chính
+  const [activeIndex, setActiveIndex] = useState(0);
+  // Trạng thái tạm dừng tự động chuyển ảnh khi rê chuột vào banner
+  const [isPaused, setIsPaused] = useState(false);
+
+  // Hàm chuyển sang slide tiếp theo
+  const nextSlide = () => {
+    setActiveIndex((prev) => (prev + 1) % destinations.length);
+  };
+
+  // Hàm quay lại slide trước đó
+  const prevSlide = () => {
+    setActiveIndex((prev) => (prev - 1 + destinations.length) % destinations.length);
+  };
+
+  // Thiết lập tự động chuyển slide sau mỗi 5 giây
+  useEffect(() => {
+    if (isPaused) return;
+    const interval = setInterval(() => {
+      nextSlide();
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [activeIndex, isPaused]);
+
+  // Lấy danh sách 4 thẻ bên phải (các địa điểm tiếp theo trong hàng đợi)
+  const rightCards = Array.from({ length: 4 }).map((_, i) => {
+    const index = (activeIndex + 1 + i) % destinations.length;
+    return {
+      ...destinations[index],
+      originalIndex: index
+    };
+  });
+
+  const currentDest = destinations[activeIndex];
+
   return (
     <div className="flex flex-col min-h-screen bg-[#F9F9F9] text-[#1E293B] font-sans overflow-x-hidden">
 
-      {/* Hero Section */}
-      <section className="relative w-full min-h-[900px] flex flex-col">
-        {/* Hero Background Image */}
+      {/* Hero Section - Banner chính chạy động chứa thông tin các địa điểm Việt Nam */}
+      <section 
+        className="relative w-full min-h-[900px] flex flex-col overflow-hidden"
+        onMouseEnter={() => setIsPaused(true)}
+        onMouseLeave={() => setIsPaused(false)}
+      >
+        {/* Các hình nền chồng lên nhau với hiệu ứng chuyển đổi mượt mà (Crossfade) */}
         <div className="absolute inset-0 w-full h-full z-0">
-          <Image
-            src="/hero-bg.png"
-            alt="Golden Bridge, Ba Na Hills"
-            fill
-            className="object-cover"
-            priority
-          />
-          {/* Subtle overlay to ensure text readability */}
-          <div className="absolute inset-0 bg-black/30"></div>
-          {/* Bottom gradient fade for smooth transition */}
-          <div className="absolute bottom-0 w-full h-48 bg-gradient-to-t from-[#F9F9F9] to-transparent"></div>
+          {destinations.map((dest, idx) => (
+            <div
+              key={idx}
+              className={`absolute inset-0 w-full h-full transition-opacity duration-1000 ease-in-out ${
+                idx === activeIndex ? "opacity-100 z-10" : "opacity-0 z-0"
+              }`}
+            >
+              <Image
+                src={dest.bgImage}
+                alt={dest.title}
+                fill
+                className={`object-cover ${idx === activeIndex ? "animate-zoom-in" : ""}`}
+                priority={idx === 0}
+              />
+            </div>
+          ))}
+          {/* Lớp phủ mờ giúp tăng độ tương phản để đọc chữ dễ dàng hơn */}
+          <div className="absolute inset-0 bg-black/40 z-20"></div>
+          {/* Hiệu ứng chuyển sắc mờ dần ở dưới chân để mượt mà khi chuyển phần */}
+          <div className="absolute bottom-0 w-full h-48 bg-gradient-to-t from-[#F9F9F9] to-transparent z-20"></div>
         </div>
 
 
-        {/* Hero Content Area */}
+        {/* Khu vực nội dung chính của Hero Banner */}
         <div className="relative z-40 max-w-[1400px] mx-auto px-6 lg:px-12 mt-32 flex flex-col lg:flex-row justify-between items-start w-full">
 
-          {/* Left Text */}
-          <div className="max-w-[500px] text-white">
+          {/* Phần thông tin văn bản bên trái */}
+          <div key={activeIndex} className="max-w-[500px] text-white animate-fade-in-up">
             <div className="flex items-center gap-2 text-[15px] font-medium mb-4">
               <MapPin size={20} className="text-[#F5A524]" weight="fill" />
-              Da Nang, Viet Nam
+              {currentDest.location}
             </div>
             <h1 className="flex flex-col mb-4">
-              <span className="font-serif text-[100px] font-bold leading-[0.9] uppercase tracking-tight">BA NA</span>
-              <span className="script-font text-[90px] font-normal leading-[0.5] tracking-wide ml-2 text-white">Hill</span>
+              <span className="font-serif text-[100px] font-bold leading-[0.9] uppercase tracking-tight">
+                {currentDest.titlePart1}
+              </span>
+              <span className="script-font text-[90px] font-normal leading-[0.5] tracking-wide ml-2 text-white">
+                {currentDest.titlePart2}
+              </span>
             </h1>
-            <p className="text-white/90 text-[16px] mb-8 leading-relaxed max-w-[400px] mt-8">
-              Ba Na Hills is a famous mountaintop resort in Da Nang, renowned for its iconic Golden Bridge and scenic cable car.
+            <p className="text-white/90 text-[16px] mb-8 leading-relaxed max-w-[400px] mt-8 min-h-[72px]">
+              {currentDest.description}
             </p>
             <div className="flex items-center gap-4">
               <button className="flex items-center gap-2 border border-white rounded-full px-6 py-3 hover:bg-white/10 transition-colors text-[15px] font-medium">
@@ -79,37 +181,54 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Right Carousel Cards */}
+          {/* Các thẻ danh sách địa điểm tiếp theo ở bên phải */}
           <div className="hidden lg:flex flex-col items-end gap-6 mt-10">
             <div className="flex gap-4">
-              {[
-                { title: "Wat Phra Kaew", loc: "Bangkok, Thailand", img: "temple" },
-                { title: "Mount Fuji", loc: "Honshu, Tokyo", img: "mountain" },
-                { title: "Nam San Tower", loc: "Seoul, Korea", img: "tower" },
-                { title: "Sentosa Island", loc: "Singapore", img: "island" },
-              ].map((item, i) => (
-                <div key={i} className="relative w-[180px] h-[280px] rounded-[24px] overflow-hidden">
-                  <Image src={`https://picsum.photos/seed/${item.img}/300/400`} alt={item.title} fill className="object-cover" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-4">
+              {rightCards.map((item) => (
+                <div 
+                  key={item.title} 
+                  onClick={() => setActiveIndex(item.originalIndex)}
+                  className="relative w-[180px] h-[280px] rounded-[24px] overflow-hidden cursor-pointer group hover:-translate-y-2 transition-all duration-300 shadow-[0_12px_30px_rgba(0,0,0,0.3)] hover:shadow-[0_20px_40px_rgba(0,0,0,0.5)]"
+                >
+                  <Image 
+                    src={item.cardImage} 
+                    alt={item.title} 
+                    fill 
+                    className="object-cover group-hover:scale-110 transition-transform duration-500" 
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-4 transition-opacity group-hover:from-black/90">
                     <div className="flex items-center gap-1.5 text-[11px] text-white/90 mb-1">
-                      <MapPin size={12} weight="fill" className="text-[#F5A524]" /> {item.loc}
+                      <MapPin size={12} weight="fill" className="text-[#F5A524]" /> {item.location.split(',')[0]}
                     </div>
                     <div className="text-white font-bold text-[15px] leading-tight">{item.title}</div>
                   </div>
                 </div>
               ))}
             </div>
+            
+            {/* Thanh điều khiển chuyển slide và thanh tiến trình thời gian */}
             <div className="flex items-center gap-6 w-full max-w-[780px] mt-2">
               <div className="flex gap-3">
-                <button className="w-10 h-10 rounded-full border border-white flex items-center justify-center text-white hover:bg-white/20 transition-colors">
+                <button 
+                  onClick={prevSlide}
+                  className="w-10 h-10 rounded-full border border-white flex items-center justify-center text-white hover:bg-white/20 transition-colors cursor-pointer"
+                >
                   <CaretLeft size={20} />
                 </button>
-                <button className="w-10 h-10 rounded-full border border-white flex items-center justify-center text-white hover:bg-white/20 transition-colors">
+                <button 
+                  onClick={nextSlide}
+                  className="w-10 h-10 rounded-full border border-white flex items-center justify-center text-white hover:bg-white/20 transition-colors cursor-pointer"
+                >
                   <CaretRight size={20} />
                 </button>
               </div>
-              <div className="flex-1 h-[2px] bg-white/30 relative">
-                <div className="absolute top-0 left-0 h-full w-1/4 bg-white"></div>
+              
+              {/* Thanh chạy tiến trình thời gian của slide hiện tại */}
+              <div className="flex-1 h-[2px] bg-white/30 relative overflow-hidden">
+                <div 
+                  key={activeIndex} 
+                  className={`absolute top-0 left-0 h-full bg-white ${isPaused ? "w-0" : "animate-progress-bar"}`}
+                ></div>
               </div>
             </div>
           </div>
