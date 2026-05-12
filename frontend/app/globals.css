@@ -82,3 +82,20 @@ body {
   animation: progressBarRun 5000ms linear forwards;
 }
 
+/* Hoạt ảnh mượt mà cho cửa sổ Popup Đăng nhập */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+
