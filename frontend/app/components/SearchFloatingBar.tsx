@@ -11,7 +11,7 @@ import {
 } from "@phosphor-icons/react";
 import { destinations } from "../data/mockData";
 
-const ACTIVITIES = ["Tham quan (Sightseeing)", "Khám phá (Adventure)", "Văn hóa (Culture)", "Ẩm thực (Food)", "Thiên nhiên (Nature)"];
+const ACTIVITIES = ["Tham quan", "Khám phá", "Văn hóa", "Ẩm thực", "Thiên nhiên"];
 
 export default function SearchFloatingBar() {
   const router = useRouter();

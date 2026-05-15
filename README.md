@@ -108,21 +108,30 @@
 Để tối ưu hóa quá trình xây dựng và kiểm thử hệ thống Travel Match, các nhóm chức năng được phân chia cụ thể thành 3 giai đoạn (Phase) phát triển như sau:
 
 ### Phase 1: Nền tảng cốt lõi & Đặt Tour cố định (MVP - Minimum Viable Product)
+
 *Mục tiêu: Đảm bảo luồng vận hành cốt lõi hoạt động trơn tru từ khâu đăng ký, đăng tour, tìm kiếm đến thanh toán đặt tour cố định.*
-* **Khách hàng (Customer)**:
-  * Đăng ký/đăng nhập tài khoản.
-  * Tìm kiếm và xem chi tiết lịch trình tour cố định.
-  * Quy trình đặt tour cố định và thanh toán trực tuyến qua cổng PayOS.
-  * Quản lý lịch sử giao dịch và hủy đặt tour.
-* **Nhà cung cấp (Tour Owner)**:
-  * Đăng tải thông tin tour cố định mới, cấu hình ngày khởi hành, giá cả và số chỗ trống.
-  * Tiếp nhận danh sách khách hàng đặt tour cố định.
-* **Quản trị viên (Admin)**:
-  * Kiểm duyệt và phê duyệt/từ chối các chương trình tour cố định trước khi hiển thị công khai.
-  * Quản lý trạng thái tài khoản người dùng (Khóa/Mở khóa).
+
+**Khách hàng (Customer)**:
+
+* [ ] Đăng ký/đăng nhập tài khoản.
+* [ ] Tìm kiếm và xem chi tiết lịch trình tour cố định.
+* [ ] Quy trình đặt tour cố định và thanh toán trực tuyến qua cổng PayOS.
+* [ ] Quản lý lịch sử giao dịch và hủy đặt tour.
+
+**Nhà cung cấp (**Tour Owner**)**:
+
+* [ ] Đăng tải thông tin tour cố định mới, cấu hình ngày khởi hành, giá cả và số chỗ trống.
+* [ ] Tiếp nhận danh sách khách hàng đặt tour cố định.
+
+**Quản trị viên (Admin)**:
+
+* [ ] Kiểm duyệt và phê duyệt/từ chối các chương trình tour cố định trước khi hiển thị công khai.
+* [ ] Quản lý trạng thái tài khoản người dùng (Khóa/Mở khóa).
 
 ### Phase 2: Tour Tự thiết kế & Tiếp thị (Private Tour, Vouchers & Operations)
+
 *Mục tiêu: Mở rộng tính năng tự thiết kế tour (Private Tour) cho khách hàng, hỗ trợ các chiến dịch marketing bằng mã giảm giá (voucher) và nâng cao khả năng quản lý tài chính cho Nhà cung cấp.*
+
 * **Khách hàng (Customer)**:
   * Gửi yêu cầu thiết kế tour riêng (Private Tour) với thông tin chi tiết (địa điểm, ngân sách, yêu cầu riêng).
   * Lựa chọn và áp dụng mã giảm giá (Voucher) khi thanh toán đặt tour.
@@ -135,7 +144,9 @@
   * Quản lý phản hồi/đánh giá (review moderation).
 
 ### Phase 3: Hệ sinh thái liên kết B2B & Chuỗi cung ứng (B2B Ecosystem & Supply Chain Integration)
+
 *Mục tiêu: Tích hợp hệ sinh thái đối tác cung ứng dịch vụ (khách sạn, nhà xe, nhà hàng, hướng dẫn viên) vào hệ thống để tối ưu hóa quy trình điều hành và đối soát tài chính của chuỗi cung ứng.*
+
 * **Đối tác cung ứng (Service Partner)**:
   * Đăng ký tài khoản doanh nghiệp, cập nhật hồ sơ năng lực và cấu hình chính sách giá B2B.
   * Quản lý lịch rảnh/bận (Availability Calendar) thời gian thực.
