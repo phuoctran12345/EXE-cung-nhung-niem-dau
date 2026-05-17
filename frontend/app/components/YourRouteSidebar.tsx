@@ -19,9 +19,9 @@ interface YourRouteSidebarProps {
   endDate: Date | null;
   onDateChange: (start: Date | null, end: Date | null) => void;
   selectedDestinations: Destination[];
-  durationMap: Record<number, { days: number; nights: number }>;
-  onDurationChange: (id: number, days: number, nights: number) => void;
-  dateRanges: Record<number, string>;
+  durationMap: Record<string, { days: number; nights: number }>;
+  onDurationChange: (id: string, days: number, nights: number) => void;
+  dateRanges: Record<string, string>;
   getDaysAndNights: (start: Date | null, end: Date | null) => { days: number; nights: number };
   onContinue: () => void;
 }

@@ -2,10 +2,16 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Tour, TourDocument } from './schemas/tour.schema';
+import { Destination, DestinationDocument } from './schemas/destination.schema';
+import { Activity, ActivityDocument } from './schemas/activity.schema';
 
 @Injectable()
 export class ToursService {
-  constructor(@InjectModel(Tour.name) private tourModel: Model<TourDocument>) {}
+  constructor(
+    @InjectModel(Tour.name) private tourModel: Model<TourDocument>,
+    @InjectModel(Destination.name) private destinationModel: Model<DestinationDocument>,
+    @InjectModel(Activity.name) private activityModel: Model<ActivityDocument>,
+  ) {}
 
   // Lấy tất cả tour đã duyệt (Cho khách hàng)
   async findAllApproved(): Promise<Tour[]> {
@@ -25,7 +31,16 @@ export class ToursService {
 
   // Lấy chi tiết tour
   async findOne(id: string): Promise<Tour> {
-    const tour = await this.tourModel.findById(id).exec();
+    let tour;
+    
+    // Kiểm tra nếu id truyền vào là một ObjectId hợp lệ
+    if (Types.ObjectId.isValid(id)) {
+      tour = await this.tourModel.findById(id).exec();
+    } else {
+      // Nếu không phải ObjectId, tìm theo slug (URL đẹp)
+      tour = await this.tourModel.findOne({ slug: id }).exec();
+    }
+    
     if (!tour) throw new NotFoundException('Không tìm thấy tour');
     return tour;
   }
@@ -61,5 +76,15 @@ export class ToursService {
   // Lấy tất cả tour cho Admin (để kiểm duyệt)
   async findAllForAdmin(): Promise<Tour[]> {
     return this.tourModel.find().exec();
+  }
+
+  // Lấy tất cả địa điểm (Destinations) cho Private Tour
+  async findAllDestinations(): Promise<Destination[]> {
+    return this.destinationModel.find().exec();
+  }
+
+  // Lấy hoạt động theo ID địa điểm cho Private Tour
+  async findActivitiesByDestination(destinationId: string): Promise<Activity[]> {
+    return this.activityModel.find({ destinationId: new Types.ObjectId(destinationId) }).exec();
   }
 }

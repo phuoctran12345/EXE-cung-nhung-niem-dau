@@ -17,6 +17,18 @@ export class ToursController {
     return this.toursService.findAllApproved();
   }
 
+  // API cho Private Tour: Lấy tất cả địa điểm
+  @Get('destinations')
+  async findAllDestinations() {
+    return this.toursService.findAllDestinations();
+  }
+
+  // API cho Private Tour: Lấy hoạt động theo địa điểm
+  @Get('destinations/:id/activities')
+  async findActivitiesByDestination(@Param('id') id: string) {
+    return this.toursService.findActivitiesByDestination(id);
+  }
+
   // API cho Khách hàng: Xem chi tiết tour (Công khai)
   @Get(':id')
   async findOne(@Param('id') id: string) {

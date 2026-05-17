@@ -204,7 +204,7 @@ export const getHighestRatedTours = () => tours.filter(t => t.isHighestRated);
 // We will export a generic list of activities with destinationId relation for the Private Tour workflow.
 export interface Activity {
   id: string;
-  destinationId: number; 
+  destinationId: string; // Đổi sang string để đồng bộ với DB (ObjectId)
   name: string;
   address: string;
   price: number;
@@ -214,28 +214,28 @@ export interface Activity {
 }
 
 export const activities: Activity[] = [
-  // Thua Thien Hue (id: 1)
-  { id: "act-1-1", destinationId: 1, name: "Breakfast: Bun Bo Ba Thuy", address: "120 Nguyen Hue Street, Hue", price: 2.00, image: "https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?w=800&q=80", durationHours: 1.5, category: "Morning" },
-  { id: "act-1-2", destinationId: 1, name: "Visit Imperial City", address: "Thuan Thanh, Hue", price: 10.00, image: "https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?w=800&q=80", durationHours: 3, category: "Morning" },
-  { id: "act-1-3", destinationId: 1, name: "Lunch: Nem Lui & Banh Khoai", address: "11 Phu Dong Thien Vuong, Hue", price: 4.00, image: "https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?w=800&q=80", durationHours: 1, category: "Afternoon" },
-  { id: "act-1-4", destinationId: 1, name: "Thien Mu Pagoda Tour", address: "Huong Hoa, Hue", price: 5.00, image: "https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?w=800&q=80", durationHours: 2, category: "Afternoon" },
-  { id: "act-1-5", destinationId: 1, name: "Perfume River Night Cruise", address: "Toa Kham Wharf, Hue", price: 15.00, image: "https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?w=800&q=80", durationHours: 2, category: "Night" },
+  // Thua Thien Hue (id: "1")
+  { id: "act-1-1", destinationId: "1", name: "Breakfast: Bun Bo Ba Thuy", address: "120 Nguyen Hue Street, Hue", price: 2.00, image: "https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?w=800&q=80", durationHours: 1.5, category: "Morning" },
+  { id: "act-1-2", destinationId: "1", name: "Visit Imperial City", address: "Thuan Thanh, Hue", price: 10.00, image: "https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?w=800&q=80", durationHours: 3, category: "Morning" },
+  { id: "act-1-3", destinationId: "1", name: "Lunch: Nem Lui & Banh Khoai", address: "11 Phu Dong Thien Vuong, Hue", price: 4.00, image: "https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?w=800&q=80", durationHours: 1, category: "Afternoon" },
+  { id: "act-1-4", destinationId: "1", name: "Thien Mu Pagoda Tour", address: "Huong Hoa, Hue", price: 5.00, image: "https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?w=800&q=80", durationHours: 2, category: "Afternoon" },
+  { id: "act-1-5", destinationId: "1", name: "Perfume River Night Cruise", address: "Toa Kham Wharf, Hue", price: 15.00, image: "https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?w=800&q=80", durationHours: 2, category: "Night" },
   
-  // Da Nang (id: 2, 7, 12)
-  { id: "act-2-1", destinationId: 2, name: "Breakfast: Mi Quang Ba Mua", address: "19 Tran Binh Trong, Da Nang", price: 3.00, image: "https://images.unsplash.com/photo-1542017631-f1f3a3889078?w=800&q=80", durationHours: 1, category: "Morning" },
-  { id: "act-2-2", destinationId: 2, name: "Marble Mountains Trek", address: "Hoa Hai, Ngu Hanh Son", price: 6.00, image: "https://images.unsplash.com/photo-1542017631-f1f3a3889078?w=800&q=80", durationHours: 3, category: "Morning" },
-  { id: "act-2-3", destinationId: 2, name: "Lunch: Seafood at My Khe", address: "Vo Nguyen Giap St", price: 20.00, image: "https://images.unsplash.com/photo-1542017631-f1f3a3889078?w=800&q=80", durationHours: 2, category: "Afternoon" },
-  { id: "act-2-4", destinationId: 2, name: "Han Market Shopping", address: "119 Tran Phu, Da Nang", price: 0.00, image: "https://images.unsplash.com/photo-1542017631-f1f3a3889078?w=800&q=80", durationHours: 2, category: "Afternoon" },
-  { id: "act-2-5", destinationId: 2, name: "Dragon Bridge Fire Show", address: "Nguyen Van Linh St", price: 0.00, image: "https://images.unsplash.com/photo-1542017631-f1f3a3889078?w=800&q=80", durationHours: 1.5, category: "Night" },
+  // Da Nang (id: "2")
+  { id: "act-2-1", destinationId: "2", name: "Breakfast: Mi Quang Ba Mua", address: "19 Tran Binh Trong, Da Nang", price: 3.00, image: "https://images.unsplash.com/photo-1542017631-f1f3a3889078?w=800&q=80", durationHours: 1, category: "Morning" },
+  { id: "act-2-2", destinationId: "2", name: "Marble Mountains Trek", address: "Hoa Hai, Ngu Hanh Son", price: 6.00, image: "https://images.unsplash.com/photo-1542017631-f1f3a3889078?w=800&q=80", durationHours: 3, category: "Morning" },
+  { id: "act-2-3", destinationId: "2", name: "Lunch: Seafood at My Khe", address: "Vo Nguyen Giap St", price: 20.00, image: "https://images.unsplash.com/photo-1542017631-f1f3a3889078?w=800&q=80", durationHours: 2, category: "Afternoon" },
+  { id: "act-2-4", destinationId: "2", name: "Han Market Shopping", address: "119 Tran Phu, Da Nang", price: 0.00, image: "https://images.unsplash.com/photo-1542017631-f1f3a3889078?w=800&q=80", durationHours: 2, category: "Afternoon" },
+  { id: "act-2-5", destinationId: "2", name: "Dragon Bridge Fire Show", address: "Nguyen Van Linh St", price: 0.00, image: "https://images.unsplash.com/photo-1542017631-f1f3a3889078?w=800&q=80", durationHours: 1.5, category: "Night" },
   
-  // Ha Giang (id: 3, 8, 13)
-  { id: "act-3-1", destinationId: 3, name: "Ma Pi Leng Pass Ride", address: "Meo Vac, Ha Giang", price: 10.00, image: "https://images.unsplash.com/photo-1620914691436-b51e041797c5?w=800&q=80", durationHours: 4, category: "Morning" },
-  { id: "act-3-2", destinationId: 3, name: "Local Thang Co Lunch", address: "Dong Van Old Quarter", price: 5.00, image: "https://images.unsplash.com/photo-1620914691436-b51e041797c5?w=800&q=80", durationHours: 1.5, category: "Afternoon" },
-  { id: "act-3-3", destinationId: 3, name: "Lung Cu Flag Tower", address: "Lung Cu, Dong Van", price: 2.00, image: "https://images.unsplash.com/photo-1620914691436-b51e041797c5?w=800&q=80", durationHours: 2, category: "Afternoon" },
-  { id: "act-3-4", destinationId: 3, name: "Homestay BBQ Night", address: "Nam Dam Village", price: 12.00, image: "https://images.unsplash.com/photo-1620914691436-b51e041797c5?w=800&q=80", durationHours: 3, category: "Night" },
+  // Ha Giang (id: "3")
+  { id: "act-3-1", destinationId: "3", name: "Ma Pi Leng Pass Ride", address: "Meo Vac, Ha Giang", price: 10.00, image: "https://images.unsplash.com/photo-1620914691436-b51e041797c5?w=800&q=80", durationHours: 4, category: "Morning" },
+  { id: "act-3-2", destinationId: "3", name: "Local Thang Co Lunch", address: "Dong Van Old Quarter", price: 5.00, image: "https://images.unsplash.com/photo-1620914691436-b51e041797c5?w=800&q=80", durationHours: 1.5, category: "Afternoon" },
+  { id: "act-3-3", destinationId: "3", name: "Lung Cu Flag Tower", address: "Lung Cu, Dong Van", price: 2.00, image: "https://images.unsplash.com/photo-1620914691436-b51e041797c5?w=800&q=80", durationHours: 2, category: "Afternoon" },
+  { id: "act-3-4", destinationId: "3", name: "Homestay BBQ Night", address: "Nam Dam Village", price: 12.00, image: "https://images.unsplash.com/photo-1620914691436-b51e041797c5?w=800&q=80", durationHours: 3, category: "Night" },
 ];
 
-export const getActivitiesByDestinationId = (destinationId: number) => {
+export const getActivitiesByDestinationId = (destinationId: string) => {
   return activities.filter(act => act.destinationId === destinationId);
 };
 

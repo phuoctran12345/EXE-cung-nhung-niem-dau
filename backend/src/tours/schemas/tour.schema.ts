@@ -8,6 +8,9 @@ export class Tour {
   @Prop({ required: true })
   title: string; // Tên tour
 
+  @Prop({ required: true, unique: true })
+  slug: string; // URL thân thiện (ví dụ: ha-long, hoian)
+
   @Prop()
   description: string; // Mô tả tour
 

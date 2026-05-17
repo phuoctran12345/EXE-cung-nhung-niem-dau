@@ -42,7 +42,7 @@ export default function Stepper({ activeStep }: StepperProps) {
 // ==== Additional Components for Itinerary workflow ==== 
 
 type Destination = {
-  id: number;
+  id: string; // Đổi sang string cho ObjectId
   name: string;
   location: string;
   image: string;
@@ -110,27 +110,77 @@ export function Itinerary({
   selectedActivityIds, 
   startDate,
   scheduledActs,
-  setScheduledActs
+  setScheduledActs,
+  allActivities // Thêm prop này
 }: {
   destinations: Destination[];
-  durations: Record<number, { days: number; nights: number }>;
-  onDurationChange: (id: number, days: number, nights: number) => void;
+  durations: Record<string, { days: number; nights: number }>;
+  onDurationChange: (id: string, days: number, nights: number) => void;
   onContinue: () => void;
   selectedActivityIds?: string[];
   startDate: Date | null;
   scheduledActs: Record<string, Activity & { customDurationHours?: number }>;
   setScheduledActs: React.Dispatch<React.SetStateAction<Record<string, Activity & { customDurationHours?: number }>>>;
+  allActivities: Activity[]; // Thêm type
 }) {
   const [activeDay, setActiveDay] = React.useState(1);
   const [isModalOpen, setIsModalOpen] = React.useState(false);
+  const [modalDayFilter, setModalDayFilter] = React.useState<number | 'all'>('all'); // State mới cho bộ lọc ngày trong modal
+  
+  // State cho hiệu ứng kéo giãn mượt mà
+  const [resizingSlot, setResizingSlot] = React.useState<string | null>(null);
+  const [resizeDeltaY, setResizeDeltaY] = React.useState(0);
+  
+  // Refs để lưu trữ giá trị bắt đầu khi kéo (Tránh closure stale state)
+  const resizeStartYRef = React.useRef(0);
+  const resizeStartDurationRef = React.useRef(0);
+
+  const totalDays = React.useMemo(() => Object.values(durations).reduce((sum, d) => sum + d.days, 0), [durations]);
+
+  // Effect quản lý sự kiện mousemove và mouseup khi kéo giãn (Đảm bảo dọn dẹp event listener chuẩn React)
+  React.useEffect(() => {
+    if (!resizingSlot) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const deltaY = e.clientY - resizeStartYRef.current;
+      setResizeDeltaY(deltaY);
+    };
+
+    const handleMouseUp = (e: MouseEvent) => {
+      const deltaY = e.clientY - resizeStartYRef.current;
+      const newDuration = Math.max(1, resizeStartDurationRef.current + Math.round(deltaY / 76));
+      
+      setScheduledActs(prev => {
+        const existing = prev[resizingSlot];
+        if (!existing) return prev;
+        return {
+          ...prev,
+          [resizingSlot]: {
+            ...existing,
+            customDurationHours: newDuration
+          }
+        };
+      });
+      
+      setResizingSlot(null);
+      setResizeDeltaY(0);
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [resizingSlot]);
 
   const allActivitiesForDestinations = React.useMemo(() => {
-     const all = destinations.flatMap(dest => getActivitiesByDestinationId(dest.id));
      if (selectedActivityIds) {
-       return all.filter(act => selectedActivityIds.includes(act.id));
+       return allActivities.filter(act => selectedActivityIds.includes(act.id));
      }
-     return all;
-  }, [destinations, selectedActivityIds]);
+     return allActivities;
+  }, [allActivities, selectedActivityIds]);
 
   const scheduledListForDay = React.useMemo(() => {
     const list: { time: string; act: Activity & { customDurationHours?: number } }[] = [];
@@ -233,13 +283,16 @@ export function Itinerary({
     const act = scheduledActs[slotKey];
     if (act && act.name) {
       const duration = act.customDurationHours || act.durationHours || 1;
-      // Chiều cao tự động tăng tương ứng với số giờ kéo dài (68px một slot, 8px margin chênh lệch)
-      const cardHeight = duration * 68 + (duration - 1) * 8;
+      
+      // Tính toán chiều cao mượt mà nếu đang kéo
+      const isResizing = resizingSlot === slotKey;
+      const baseHeight = duration * 68 + (duration - 1) * 8;
+      const cardHeight = isResizing ? Math.max(68, baseHeight + resizeDeltaY) : baseHeight;
       
       return (
         <div 
           key={time}
-          className="flex gap-4 relative z-10 w-full rounded-xl transition-all duration-300 -ml-2 pl-2 py-1"
+          className={`flex gap-4 relative z-10 w-full rounded-xl -ml-2 pl-2 py-1 ${isResizing ? 'transition-none' : 'transition-all duration-300'}`}
           style={{ height: `${cardHeight}px` }}
         >
            <span className="w-[35px] flex-shrink-0 text-slate-400 text-[12px] pt-3 font-semibold tracking-wider pointer-events-none">{time}</span>
@@ -283,32 +336,10 @@ export function Itinerary({
                  onMouseDown={(mouseDownEvent) => {
                    mouseDownEvent.preventDefault();
                    mouseDownEvent.stopPropagation();
-                   const startY = mouseDownEvent.clientY;
-                   const startDuration = duration;
-                   
-                   const handleMouseMove = (mouseMoveEvent: MouseEvent) => {
-                     const deltaY = mouseMoveEvent.clientY - startY;
-                     const newDuration = Math.max(1, startDuration + Math.round(deltaY / 76));
-                     setScheduledActs(prev => {
-                       const existing = prev[slotKey];
-                       if (!existing) return prev;
-                       return {
-                         ...prev,
-                         [slotKey]: {
-                           ...existing,
-                           customDurationHours: newDuration
-                         }
-                       };
-                     });
-                   };
-                   
-                   const handleMouseUp = () => {
-                     window.removeEventListener("mousemove", handleMouseMove);
-                     window.removeEventListener("mouseup", handleMouseUp);
-                   };
-                   
-                   window.addEventListener("mousemove", handleMouseMove);
-                   window.addEventListener("mouseup", handleMouseUp);
+                   resizeStartYRef.current = mouseDownEvent.clientY;
+                   resizeStartDurationRef.current = duration;
+                   setResizingSlot(slotKey);
+                   setResizeDeltaY(0);
                  }}
                >
                  <div className="w-8 h-1.5 bg-[#38BDF8] rounded-full shadow-sm hover:scale-y-125 transition-transform" />
@@ -376,7 +407,7 @@ export function Itinerary({
         </div>
 
         <div className="flex gap-4 px-4 border-b border-slate-50 overflow-x-auto whitespace-nowrap scrollbar-none pb-0">
-           {Array.from({ length: Object.values(durations).reduce((sum, d) => sum + d.days, 0) || 1 }, (_, i) => i + 1).map(day => (
+           {Array.from({ length: totalDays || 1 }, (_, i) => i + 1).map(day => (
               <button 
                  key={day} 
                  onClick={() => setActiveDay(day)}
@@ -529,12 +560,26 @@ export function Itinerary({
               </div>
             </div>
             
-            <button 
-              onClick={() => setIsModalOpen(false)}
-              className="px-6 py-2.5 bg-gradient-to-r from-sky-400 to-sky-500 hover:from-sky-500 hover:to-sky-600 text-white font-bold text-[13.5px] rounded-xl shadow-md transition-all flex items-center gap-1.5 hover:scale-[1.01]"
-            >
-              LƯU & ĐÓNG ✓
-            </button>
+            <div className="flex items-center gap-4">
+              {/* Bộ lọc chọn xem lịch theo ngày cụ thể hoặc tất cả các ngày */}
+              <select 
+                value={modalDayFilter}
+                onChange={(e) => setModalDayFilter(e.target.value === 'all' ? 'all' : parseInt(e.target.value, 10))}
+                className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-[13px] font-bold text-slate-700 focus:outline-none focus:border-[#38BDF8] cursor-pointer hover:bg-slate-100 transition-colors"
+              >
+                <option value="all">Tất cả các ngày (All Days)</option>
+                {Array.from({ length: totalDays || 1 }, (_, i) => i + 1).map(day => (
+                  <option key={day} value={day}>Ngày {day} ({getFormattedDayDate(day)})</option>
+                ))}
+              </select>
+              
+              <button 
+                onClick={() => setIsModalOpen(false)}
+                className="px-6 py-2.5 bg-gradient-to-r from-sky-400 to-sky-500 hover:from-sky-500 hover:to-sky-600 text-white font-bold text-[13.5px] rounded-xl shadow-md transition-all flex items-center gap-1.5 hover:scale-[1.01]"
+              >
+                LƯU & ĐÓNG ✓
+              </button>
+            </div>
           </div>
           
           {/* Modal Body */}
@@ -584,7 +629,9 @@ export function Itinerary({
                     <span className="text-[10px] font-bold text-slate-400">GIỜ</span>
                   </div>
                   
-                  {Array.from({ length: Object.values(durations).reduce((sum, d) => sum + d.days, 0) || 1 }, (_, i) => i + 1).map((dayNum) => (
+                  {Array.from({ length: totalDays || 1 }, (_, i) => i + 1)
+                    .filter(dayNum => modalDayFilter === 'all' || modalDayFilter === dayNum)
+                    .map((dayNum) => (
                     <div key={dayNum} className="flex-1 min-w-[180px] border-r border-slate-100 bg-slate-50 py-3 flex flex-col items-center justify-center">
                       <span className="text-[10px] font-extrabold text-slate-400 tracking-wider">DAY {dayNum}</span>
                       <span className="text-[13px] font-bold text-slate-700 mt-0.5">{getFormattedDayDate(dayNum)}</span>
@@ -604,7 +651,9 @@ export function Itinerary({
                   </div>
                   
                   {/* Columns for Days */}
-                  {Array.from({ length: Object.values(durations).reduce((sum, d) => sum + d.days, 0) || 1 }, (_, i) => i + 1).map((dayNum) => {
+                  {Array.from({ length: totalDays || 1 }, (_, i) => i + 1)
+                    .filter(dayNum => modalDayFilter === 'all' || modalDayFilter === dayNum)
+                    .map((dayNum) => {
                     const coveredHours = getCoveredHoursForDay(dayNum);
                     
                     return (
@@ -657,38 +706,16 @@ export function Itinerary({
                                     ✕
                                   </button>
 
-                                  {/* Resize Handle */}
+                                  {/* Tay kéo kéo giãn thời lượng hoạt động chuẩn Google Calendar */}
                                   <div 
-                                    className="absolute bottom-0 left-0 right-0 h-2 cursor-ns-resize flex items-center justify-center group-hover:bg-sky-50/30 transition-colors z-20"
+                                    className="absolute bottom-0 left-0 right-0 h-2.5 cursor-ns-resize flex items-center justify-center group-hover:bg-sky-50/50 transition-colors rounded-b-2xl z-20"
                                     onMouseDown={(mouseDownEvent) => {
                                       mouseDownEvent.preventDefault();
                                       mouseDownEvent.stopPropagation();
-                                      const startY = mouseDownEvent.clientY;
-                                      const startDuration = duration;
-                                      
-                                      const handleMouseMove = (mouseMoveEvent: MouseEvent) => {
-                                        const deltaY = mouseMoveEvent.clientY - startY;
-                                        const newDuration = Math.max(1, startDuration + Math.round(deltaY / 76));
-                                        setScheduledActs(prev => {
-                                          const existing = prev[slotKey];
-                                          if (!existing) return prev;
-                                          return {
-                                            ...prev,
-                                            [slotKey]: {
-                                              ...existing,
-                                              customDurationHours: newDuration
-                                            }
-                                          };
-                                        });
-                                      };
-                                      
-                                      const handleMouseUp = () => {
-                                        window.removeEventListener("mousemove", handleMouseMove);
-                                        window.removeEventListener("mouseup", handleMouseUp);
-                                      };
-                                      
-                                      window.addEventListener("mousemove", handleMouseMove);
-                                      window.addEventListener("mouseup", handleMouseUp);
+                                      resizeStartYRef.current = mouseDownEvent.clientY;
+                                      resizeStartDurationRef.current = duration;
+                                      setResizingSlot(slotKey);
+                                      setResizeDeltaY(0);
                                     }}
                                   >
                                     <div className="w-5 h-1 bg-[#38BDF8] rounded-full shadow-sm" />
@@ -733,9 +760,9 @@ export function Summary({
   startDate
 }: { 
   destinations: Destination[]; 
-  durations: Record<number, { days: number; nights: number }>; 
+  durations: Record<string, { days: number; nights: number }>; // Đổi key sang string
   scheduledActs: Record<string, Activity & { customDurationHours?: number }>;
-  onFinish: () => void;
+  onFinish: (data: { participants: number, totalPrice: number }) => void;
   startDate: Date | null;
 }) {
   const [adults, setAdults] = React.useState(2);
@@ -870,7 +897,10 @@ export function Summary({
 
       <button
         className="w-full bg-[#38BDF8] hover:bg-[#0284C7] text-white font-bold py-3.5 rounded-xl transition-colors shadow-md text-[14px] mb-3"
-        onClick={onFinish}
+        onClick={() => onFinish({ 
+          participants: adults + children, 
+          totalPrice: totalPriceUSD 
+        })}
       >
         CONFIRM BOOKING
       </button>

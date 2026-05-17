@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { 
   FileText, 
   PencilSimpleLine, 
@@ -13,6 +13,97 @@ import {
 export default function PartnerContractPage() {
   const [signed, setSigned] = useState(false);
   const [signature, setSignature] = useState("");
+
+  // Refs và State cho tính năng vẽ chữ ký
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [isCanvasEmpty, setIsCanvasEmpty] = useState(true);
+
+  // Khởi tạo cấu hình canvas
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    // Đặt kích thước canvas bằng kích thước hiển thị thực tế
+    canvas.width = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+    
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    // Cấu hình nét vẽ
+    ctx.strokeStyle = '#1E293B'; // Màu mực tối
+    ctx.lineWidth = 4; // Tăng độ dày nét vẽ để nhìn rõ hơn (zoom)
+    ctx.lineCap = 'round'; // Đầu nét vẽ tròn
+    ctx.lineJoin = 'round'; // Khớp nối tròn
+  }, []);
+
+  // Hàm bắt đầu vẽ
+  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.beginPath();
+    const rect = canvas.getBoundingClientRect();
+    let x, y;
+    
+    // Xử lý cho cả chuột và cảm ứng
+    if ('touches' in e) {
+      e.preventDefault(); // Ngăn cuộn trang trên mobile
+      x = e.touches[0].clientX - rect.left;
+      y = e.touches[0].clientY - rect.top;
+    } else {
+      x = e.clientX - rect.left;
+      y = e.clientY - rect.top;
+    }
+    
+    ctx.moveTo(x, y);
+    setIsDrawing(true);
+    setIsCanvasEmpty(false);
+  };
+
+  // Hàm đang vẽ
+  const draw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    if (!isDrawing) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const rect = canvas.getBoundingClientRect();
+    let x, y;
+    
+    if ('touches' in e) {
+      e.preventDefault();
+      x = e.touches[0].clientX - rect.left;
+      y = e.touches[0].clientY - rect.top;
+    } else {
+      x = e.clientX - rect.left;
+      y = e.clientY - rect.top;
+    }
+    
+    ctx.lineTo(x, y);
+    ctx.stroke();
+  };
+
+  // Hàm dừng vẽ
+  const stopDrawing = () => {
+    setIsDrawing(false);
+  };
+
+  // Hàm xóa chữ ký
+  const clearCanvas = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    // Xóa toàn bộ nội dung trong canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    setIsCanvasEmpty(true);
+  };
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] pt-12 pb-24 px-4">
@@ -95,15 +186,37 @@ export default function PartnerContractPage() {
                   />
                 </div>
 
-                <div className="h-40 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center relative group">
-                  {signature ? (
-                    <span className="text-3xl font-signature text-[#1E293B] rotate-[-2deg] select-none">{signature}</span>
-                  ) : (
-                    <p className="text-gray-400 text-[13px] font-medium">Nhập tên để tạo chữ ký</p>
-                  )}
-                  <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <ShieldCheck size={20} className="text-green-500" weight="fill" />
+                <div className="relative">
+                  <div className="h-60 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 relative group overflow-hidden">
+                    <canvas
+                      ref={canvasRef}
+                      className="w-full h-full cursor-crosshair"
+                      onMouseDown={startDrawing}
+                      onMouseMove={draw}
+                      onMouseUp={stopDrawing}
+                      onMouseOut={stopDrawing}
+                      onTouchStart={startDrawing}
+                      onTouchMove={draw}
+                      onTouchEnd={stopDrawing}
+                    />
+                    {isCanvasEmpty && (
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <p className="text-gray-400 text-[13px] font-medium">Vẽ chữ ký của bạn tại đây</p>
+                      </div>
+                    )}
+                    <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                      <ShieldCheck size={20} className="text-green-500" weight="fill" />
+                    </div>
                   </div>
+                  {!isCanvasEmpty && (
+                    <button 
+                      type="button"
+                      onClick={clearCanvas}
+                      className="absolute top-2 right-2 text-xs font-bold text-gray-400 hover:text-red-500 transition-colors bg-white/80 px-2 py-1 rounded-md"
+                    >
+                      Xóa
+                    </button>
+                  )}
                 </div>
 
                 <label className="flex items-start gap-3 cursor-pointer group mt-6">
@@ -120,9 +233,9 @@ export default function PartnerContractPage() {
 
                 <div className="pt-4 space-y-3">
                   <button 
-                    disabled={!signed || !signature}
+                    disabled={!signed || !signature || isCanvasEmpty}
                     onClick={() => window.location.href = '/be-partner/success'}
-                    className={`w-full py-4 rounded-2xl font-bold text-lg shadow-lg transition-all flex items-center justify-center gap-3 ${signed && signature ? 'bg-[#38BDF8] text-white shadow-[#38BDF8]/20 hover:bg-[#32AADB] active:scale-95' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
+                    className={`w-full py-4 rounded-2xl font-bold text-lg shadow-lg transition-all flex items-center justify-center gap-3 ${signed && signature && !isCanvasEmpty ? 'bg-[#38BDF8] text-white shadow-[#38BDF8]/20 hover:bg-[#32AADB] active:scale-95' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
                   >
                     Xác nhận & Ký kết <ArrowRight size={20} weight="bold" />
                   </button>
