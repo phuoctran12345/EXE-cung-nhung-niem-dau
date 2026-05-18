@@ -7,7 +7,7 @@ import StayRangePicker from "./StayRangePicker";
 
 // Định nghĩa cấu trúc Destination cho đồng nhất dữ liệu
 interface Destination {
-  id: number;
+  id: string;
   name: string;
   location: string;
   image: string;
