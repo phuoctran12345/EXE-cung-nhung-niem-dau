@@ -24,11 +24,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('Không tìm thấy người dùng');
     }
     // Trả về thông tin người dùng (sẽ được gán vào request.user)
-    return { 
-      id: user._id, 
-      email: user.email, 
+    return {
+      id: user._id.toString(),
+      email: user.email,
       role: user.role,
-      name: user.name 
+      name: user.name,
     };
   }
 }

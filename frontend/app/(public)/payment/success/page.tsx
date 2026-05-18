@@ -9,7 +9,8 @@ function SuccessContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const orderCode = searchParams.get("orderCode");
-  
+  const isFreeOrder = searchParams.get("free") === "1";
+
   const [isVerifying, setIsVerifying] = useState(true);
   const [countdown, setCountdown] = useState(5);
 
@@ -18,9 +19,8 @@ function SuccessContent() {
       if (!orderCode) return;
       try {
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4001/api";
-        // Giả lập thời gian xác thực để tạo trải nghiệm UX chuyên nghiệp
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
+        await new Promise(resolve => setTimeout(resolve, isFreeOrder ? 800 : 2000));
+
         const res = await fetch(`${apiUrl}/bookings/confirm-payment?orderCode=${orderCode}`, {
           method: "POST"
         });
@@ -43,7 +43,7 @@ function SuccessContent() {
         setCountdown((prev) => {
           if (prev <= 1) {
             clearInterval(timer);
-            router.push("/profile");
+            router.push("/");
             return 0;
           }
           return prev - 1;
@@ -60,8 +60,12 @@ function SuccessContent() {
           <CircleNotch size={100} weight="bold" className="text-[#38BDF8] animate-spin" />
           <ShieldCheck size={40} weight="fill" className="text-[#38BDF8] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
         </div>
-        <h2 className="text-[24px] font-black text-[#1A2434] mb-2">Đang xác thực giao dịch...</h2>
-        <p className="text-gray-400 font-medium italic">Vui lòng đợi trong giây lát, chúng tôi đang kiểm tra với PayOS</p>
+        <h2 className="text-[24px] font-black text-[#1A2434] mb-2">
+          {isFreeOrder ? "Đang xác nhận đơn hàng..." : "Đang xác thực giao dịch..."}
+        </h2>
+        <p className="text-gray-400 font-medium italic">
+          {isFreeOrder ? "Tour miễn phí (voucher 100%)" : "Vui lòng đợi trong giây lát, chúng tôi đang kiểm tra với PayOS"}
+        </p>
       </div>
     );
   }
@@ -77,10 +81,24 @@ function SuccessContent() {
           <CheckCircle size={70} weight="fill" className="text-[#38BDF8]" />
         </div>
 
-        <h1 className="text-[36px] font-black text-[#1A2434] mb-4">Thanh toán thành công!</h1>
+        <h1 className="text-[36px] font-black text-[#1A2434] mb-4">
+          {isFreeOrder ? "Đặt tour thành công!" : "Thanh toán thành công!"}
+        </h1>
         <p className="text-gray-500 font-medium text-[17px] mb-10 leading-relaxed">
-          Giao dịch mã <span className="font-bold text-[#38BDF8]">#{orderCode}</span> đã hoàn tất. 
-          Bạn sẽ được tự động chuyển đến trang lịch sử đơn hàng sau <span className="font-black text-[#38BDF8]">{countdown}s</span>.
+          {isFreeOrder ? (
+            <>
+              Đơn hàng <span className="font-bold text-green-600">miễn phí</span> mã{" "}
+              <span className="font-bold text-[#38BDF8]">#{orderCode}</span> đã được xác nhận.
+              Bạn sẽ được chuyển đến lịch sử đơn hàng sau{" "}
+              <span className="font-black text-[#38BDF8]">{countdown}s</span>.
+            </>
+          ) : (
+            <>
+              Giao dịch mã <span className="font-bold text-[#38BDF8]">#{orderCode}</span> đã hoàn tất.
+              Bạn sẽ được tự động chuyển đến trang lịch sử đơn hàng sau{" "}
+              <span className="font-black text-[#38BDF8]">{countdown}s</span>.
+            </>
+          )}
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

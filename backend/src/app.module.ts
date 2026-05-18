@@ -9,6 +9,7 @@ import { ToursModule } from './tours/tours.module';
 import { BookingsModule } from './bookings/bookings.module';
 import { UploadsModule } from './uploads/uploads.module';
 import { AiModule } from './ai/ai.module';
+import { VouchersModule } from './vouchers/vouchers.module';
 
 // Module chính của ứng dụng backend
 @Module({
@@ -30,6 +31,7 @@ import { AiModule } from './ai/ai.module';
     UsersModule,
     ToursModule,
     BookingsModule,
+    VouchersModule,
     UploadsModule,
     AiModule,
   ],

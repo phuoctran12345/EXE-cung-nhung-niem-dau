@@ -40,8 +40,9 @@ export class ToursController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('tour_owner')
   async create(@Body() tourData: any, @Request() req: any) {
-    // Tự động lấy ownerId từ Token đã xác thực
-    return this.toursService.create({ ...tourData, ownerId: req.user.id });
+    // Không tin ownerId từ body — chỉ lấy từ JWT
+    const { ownerId: _ignored, _id, ...safeTourData } = tourData;
+    return this.toursService.create(safeTourData, req.user.id);
   }
 
   // API cho Chủ tour: Xem danh sách tour của mình

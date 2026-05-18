@@ -54,7 +54,13 @@ export class AuthService {
         success: true,
         data: {
           token: this.jwtService.sign({ email: user.email, sub: user._id, role: user.role }),
-          user: { id: user._id, name: user.name, email: user.email, role: user.role, avatarUrl: user.avatarUrl }
+          user: {
+            id: user._id.toString(),
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            avatarUrl: user.avatarUrl,
+          },
         }
       };
     } catch (e) {
@@ -95,7 +101,7 @@ export class AuthService {
       data: {
         token: token,
         user: {
-          id: user._id,
+          id: user._id.toString(),
           name: user.name,
           email: user.email,
           role: user.role,
@@ -135,7 +141,7 @@ export class AuthService {
       data: {
         token: token,
         user: {
-          id: newUser._id,
+          id: newUser._id.toString(),
           name: newUser.name,
           email: newUser.email,
           role: newUser.role,
@@ -163,7 +169,7 @@ export class AuthService {
       success: true,
       data: {
         user: {
-          id: (user as any)._id,
+          id: (user as any)._id.toString(),
           name: user.name,
           email: user.email,
           role: user.role,
