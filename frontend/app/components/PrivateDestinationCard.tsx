@@ -5,7 +5,7 @@ import Image from "next/image";
 import type { FC } from "react";
 
 type Destination = {
-  id: number;
+  id: string;
   name: string;
   location: string;
   image: string;
