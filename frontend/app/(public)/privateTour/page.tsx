@@ -132,7 +132,7 @@ export default function PrivateTourPage() {
   };
 
   // Xử lý thay đổi thời gian cho một địa điểm cụ thể
-  const handleDurationChange = (id: number, days: number, nights: number) => {
+  const handleDurationChange = (id: string, days: number, nights: number) => {
     const { days: totalDays, nights: totalNights } = getDaysAndNights(startDate, endDate);
     
     if (selectedDestinations.length <= 1) return;
