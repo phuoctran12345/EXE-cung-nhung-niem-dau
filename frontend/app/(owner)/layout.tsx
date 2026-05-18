@@ -11,7 +11,8 @@ import {
   ArrowLeft,
   SignOut,
   Bell,
-  ChartLineUp
+  ChartLineUp,
+  Ticket
 } from "@phosphor-icons/react";
 
 export default function OwnerLayout({ children }: { children: ReactNode }) {
@@ -54,6 +55,7 @@ export default function OwnerLayout({ children }: { children: ReactNode }) {
           <OwnerSidebarLink href="/owner/dashboard" icon={<Layout size={22} />} label="Tổng quan" />
           <OwnerSidebarLink href="/owner/create-tour" icon={<PlusCircle size={22} />} label="Đăng Tour mới" />
           <OwnerSidebarLink href="/owner/tours" icon={<ChartLineUp size={22} />} label="Quản lý Tour của tôi" />
+          <OwnerSidebarLink href="/owner/vouchers" icon={<Ticket size={22} />} label="Quản lý Voucher" />
           <OwnerSidebarLink href="/owner/bookings" icon={<Users size={22} />} label="Danh sách Khách hàng" />
         </nav>
 

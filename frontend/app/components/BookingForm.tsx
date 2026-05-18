@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Users, CreditCard, ShieldCheck, ArrowRight, X, WarningCircle, CircleNotch, PaperPlaneTilt } from "@phosphor-icons/react";
+import { Users, CreditCard, ShieldCheck, ArrowRight, X, WarningCircle, CircleNotch, PaperPlaneTilt, Ticket } from "@phosphor-icons/react";
 import Image from "next/image";
 
 interface BookingFormProps {
@@ -16,22 +16,96 @@ export default function BookingForm({ isOpen, onClose, tour, participants: initi
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
+  const [voucherCode, setVoucherCode] = useState("");
+  const [discountAmount, setDiscountAmount] = useState(0);
+  const [appliedVoucher, setAppliedVoucher] = useState<string | null>(null);
+  const [voucherLoading, setVoucherLoading] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
   useEffect(() => {
-    if (isOpen) setError(null);
+    if (isOpen) {
+      setError(null);
+      setVoucherCode("");
+      setDiscountAmount(0);
+      setAppliedVoucher(null);
+    }
   }, [isOpen]);
+
+  useEffect(() => {
+    setDiscountAmount(0);
+    setAppliedVoucher(null);
+  }, [participants]);
 
   if (!isOpen || !mounted) return null;
 
   const price = tour?.price || 0;
-  const totalPrice = price * participants;
+  const subtotal = price * participants;
+  const totalPrice = Math.max(0, subtotal - discountAmount);
+  const isFreeCheckout = totalPrice === 0 && !!appliedVoucher;
 
   const formatVND = (amount: number) => {
     return amount.toLocaleString("vi-VN") + " VNĐ";
+  };
+
+  const getTourId = () => tour?._id || tour?.id;
+
+  const getErrorMessage = (data: unknown, fallback: string) => {
+    if (!data || typeof data !== "object") return fallback;
+    const msg = (data as { message?: string | string[] }).message;
+    if (Array.isArray(msg)) return msg.join(", ");
+    if (typeof msg === "string") return msg;
+    return fallback;
+  };
+
+  const handleApplyVoucher = async () => {
+    if (!voucherCode.trim()) {
+      setError("Vui lòng nhập mã voucher.");
+      return;
+    }
+    const tourId = getTourId();
+    if (!tourId) {
+      setError("Không xác định được tour. Vui lòng tải lại trang.");
+      return;
+    }
+
+    setVoucherLoading(true);
+    setError(null);
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4001/api";
+      const res = await fetch(`${apiUrl}/vouchers/validate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code: voucherCode.trim(),
+          tourId,
+          subtotal,
+        }),
+      });
+      const result = await res.json();
+      if (result.valid) {
+        setDiscountAmount(Math.round(result.discountAmount));
+        setAppliedVoucher(result.code);
+        setVoucherCode(result.code);
+      } else {
+        setDiscountAmount(0);
+        setAppliedVoucher(null);
+        setError(result.message || "Voucher không hợp lệ.");
+      }
+    } catch {
+      setError("Không thể kiểm tra voucher. Vui lòng thử lại.");
+    } finally {
+      setVoucherLoading(false);
+    }
+  };
+
+  const handleRemoveVoucher = () => {
+    setVoucherCode("");
+    setDiscountAmount(0);
+    setAppliedVoucher(null);
+    setError(null);
   };
 
   const handleBooking = async () => {
@@ -41,34 +115,60 @@ export default function BookingForm({ isOpen, onClose, tour, participants: initi
       return;
     }
 
+    const tourId = getTourId();
+    if (!tourId) {
+      setError("Không xác định được tour. Vui lòng tải lại trang.");
+      return;
+    }
+
+    if (voucherCode.trim() && !appliedVoucher) {
+      setError('Vui lòng nhấn "Áp dụng" mã voucher trước khi thanh toán.');
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4001/api";
+      const body: Record<string, unknown> = {
+        tourId,
+        numberOfParticipants: participants,
+      };
+
+      if (appliedVoucher) {
+        body.voucherCode = appliedVoucher;
+      } else {
+        body.totalPrice = subtotal;
+      }
+
       const res = await fetch(`${apiUrl}/bookings`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`
         },
-        body: JSON.stringify({
-          tourId: tour._id,
-          numberOfParticipants: participants,
-          totalPrice: totalPrice
-        })
+        body: JSON.stringify(body),
       });
 
       const result = await res.json();
-      
-      if (result.success && result.data.paymentUrl) {
-        // Giả lập hiệu ứng chờ 1 giây để người dùng thấy thông báo chuyển hướng
-        setTimeout(() => {
-          window.location.href = result.data.paymentUrl;
-        }, 1200);
-      } else {
+      const paymentUrl = result?.data?.paymentUrl;
+
+      if (!res.ok) {
         setLoading(false);
-        setError(result.message || "Không thể tạo link thanh toán.");
+        setError(getErrorMessage(result, "Không thể hoàn tất đặt tour."));
+        return;
       }
+
+      if (paymentUrl) {
+        const delay = result?.data?.isFree ? 400 : 1200;
+        setTimeout(() => {
+          window.location.assign(paymentUrl);
+        }, delay);
+        return;
+      }
+
+      setLoading(false);
+      setError(getErrorMessage(result, "Không nhận được link thanh toán từ server."));
     } catch (error) {
       console.error("Booking error:", error);
       setLoading(false);
@@ -88,9 +188,15 @@ export default function BookingForm({ isOpen, onClose, tour, participants: initi
             <CircleNotch size={80} weight="bold" className="text-[#38BDF8] animate-spin" />
             <PaperPlaneTilt size={32} weight="fill" className="text-[#38BDF8] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-pulse" />
           </div>
-          <h3 className="mt-8 text-[22px] font-black text-[#1A2434]">Đang kết nối thanh toán...</h3>
+          <h3 className="mt-8 text-[22px] font-black text-[#1A2434]">
+            {isFreeCheckout ? "Đang hoàn tất đặt tour miễn phí..." : "Đang kết nối thanh toán..."}
+          </h3>
           <p className="mt-2 text-gray-500 font-medium text-center px-10">
-            Chúng tôi đang chuyển bạn đến cổng thanh toán an toàn của <strong>PayOS</strong>. Vui lòng không tắt trình duyệt.
+            {isFreeCheckout ? (
+              <>Voucher giảm 100% — không cần thanh toán qua PayOS.</>
+            ) : (
+              <>Chúng tôi đang chuyển bạn đến cổng thanh toán an toàn của <strong>PayOS</strong>. Vui lòng không tắt trình duyệt.</>
+            )}
           </p>
         </div>
       )}
@@ -136,13 +242,59 @@ export default function BookingForm({ isOpen, onClose, tour, participants: initi
             <p className="text-[12px] text-gray-400 mt-2 font-medium italic text-center">Chỗ trống còn lại: {tour?.slots} người</p>
           </div>
 
+          <div className="mb-6">
+            <label className="text-gray-500 font-bold text-sm uppercase mb-3 block tracking-wider">Mã giảm giá</label>
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Ticket size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#38BDF8]" />
+                <input
+                  type="text"
+                  value={voucherCode}
+                  onChange={(e) => setVoucherCode(e.target.value.toUpperCase())}
+                  disabled={!!appliedVoucher}
+                  placeholder="Nhập mã voucher"
+                  className="w-full pl-12 pr-4 py-3 bg-[#F8F9FA] rounded-xl border border-gray-100 focus:ring-2 focus:ring-[#38BDF8] outline-none font-bold uppercase disabled:opacity-60"
+                />
+              </div>
+              {appliedVoucher ? (
+                <button
+                  type="button"
+                  onClick={handleRemoveVoucher}
+                  className="px-4 py-3 rounded-xl font-bold text-red-500 bg-red-50 hover:bg-red-100 transition-all"
+                >
+                  Xóa
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleApplyVoucher}
+                  disabled={voucherLoading || !voucherCode.trim()}
+                  className="px-5 py-3 rounded-xl font-bold text-white bg-[#1A2434] hover:bg-[#2a3a52] transition-all disabled:opacity-50"
+                >
+                  {voucherLoading ? "..." : "Áp dụng"}
+                </button>
+              )}
+            </div>
+            {appliedVoucher && (
+              <p className="text-green-600 text-[13px] font-bold mt-2">
+                Đã áp dụng mã {appliedVoucher} — giảm {formatVND(discountAmount)}
+              </p>
+            )}
+          </div>
+
           <div className="bg-[#F0F9FF] rounded-2xl p-6 mb-8">
             <div className="flex justify-between items-center mb-2">
               <span className="text-gray-600 font-medium">{formatVND(price)} x {participants} người</span>
-              <span className="text-gray-800 font-bold">{formatVND(totalPrice)}</span>
+              <span className="text-gray-800 font-bold">{formatVND(subtotal)}</span>
             </div>
+            {discountAmount > 0 && (
+              <div className="flex justify-between items-center mb-2 text-green-600">
+                <span className="font-medium">Giảm giá voucher</span>
+                <span className="font-bold">-{formatVND(discountAmount)}</span>
+              </div>
+            )}
             <div className="flex justify-between items-center pt-2 border-t border-[#38BDF8]/20">
-              <span className="text-[#1E293B] font-extrabold text-lg">Tổng cộng tạm tính</span>
+              <span className="text-[#1E293B] font-extrabold text-lg">Tổng thanh toán</span>
               <span className="text-[#38BDF8] font-black text-2xl">{formatVND(totalPrice)}</span>
             </div>
           </div>
@@ -150,14 +302,20 @@ export default function BookingForm({ isOpen, onClose, tour, participants: initi
           <button 
             onClick={handleBooking}
             disabled={loading}
-            className="w-full bg-[#38BDF8] hover:bg-[#32AADB] text-white py-4 rounded-full font-bold text-[18px] flex items-center justify-center gap-3 shadow-lg shadow-[#38BDF8]/20 transition-all active:scale-[0.98] disabled:opacity-50"
+            className={`w-full text-white py-4 rounded-full font-bold text-[18px] flex items-center justify-center gap-3 shadow-lg transition-all active:scale-[0.98] disabled:opacity-50 ${
+              isFreeCheckout
+                ? "bg-green-500 hover:bg-green-600 shadow-green-500/20"
+                : "bg-[#38BDF8] hover:bg-[#32AADB] shadow-[#38BDF8]/20"
+            }`}
           >
             <CreditCard size={24} weight="bold" />
-            Tiến hành thanh toán <ArrowRight size={20} weight="bold" />
+            {isFreeCheckout ? "Xác nhận đặt tour miễn phí" : "Tiến hành thanh toán"}
+            <ArrowRight size={20} weight="bold" />
           </button>
 
           <div className="mt-6 flex items-center justify-center gap-2 text-[13px] text-gray-400 font-medium italic">
-            <ShieldCheck size={18} className="text-green-500" /> Thanh toán an toàn và bảo mật qua PayOS
+            <ShieldCheck size={18} className="text-green-500" />
+            {isFreeCheckout ? "Đơn hàng được xác nhận ngay, không qua cổng PayOS" : "Thanh toán an toàn và bảo mật qua PayOS"}
           </div>
         </div>
       </div>

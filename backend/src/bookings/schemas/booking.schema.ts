@@ -15,7 +15,19 @@ export class Booking {
   status: string; // Trạng thái đặt tour (Chờ thanh toán, Đã thanh toán, Đã hủy)
 
   @Prop({ required: true })
-  totalPrice: number; // Tổng số tiền thanh toán
+  totalPrice: number; // Tổng số tiền thanh toán (sau giảm giá)
+
+  @Prop()
+  originalPrice: number; // Tổng trước khi áp dụng voucher
+
+  @Prop()
+  voucherCode: string; // Mã voucher đã áp dụng
+
+  @Prop({ type: Types.ObjectId, ref: 'Voucher' })
+  voucherId: Types.ObjectId;
+
+  @Prop({ default: 0 })
+  discountAmount: number; // Số tiền được giảm
 
   @Prop()
   paymentId: string; // Mã giao dịch từ cổng thanh toán (PayOS)
