@@ -5,7 +5,7 @@ import Image from "next/image";
 import { Clock, Plus, Minus } from "@phosphor-icons/react";
 
 type Destination = {
-  id: number;
+  id: string;
   name: string;
   location: string;
   image: string;
