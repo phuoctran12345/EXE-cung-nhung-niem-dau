@@ -4,11 +4,13 @@ import { BookingsController } from './bookings.controller';
 import { BookingsService } from './bookings.service';
 import { Booking, BookingSchema } from './schemas/booking.schema';
 import { ToursModule } from '../tours/tours.module';
+import { VouchersModule } from '../vouchers/vouchers.module';
 
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: Booking.name, schema: BookingSchema }]),
-    ToursModule, // Thêm ToursModule để sử dụng ToursService
+    ToursModule,
+    VouchersModule,
   ],
   controllers: [BookingsController],
   providers: [BookingsService],

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Tour, TourDocument } from './schemas/tour.schema';
@@ -60,22 +60,47 @@ export class ToursService {
   }
 
   // Tạo tour mới (Chủ tour)
-  async create(tourData: Partial<Tour>): Promise<Tour> {
+  async create(tourData: Partial<Tour>, ownerId: string): Promise<Tour> {
+    const ownerIdStr = ownerId?.toString?.() ?? '';
+    if (!Types.ObjectId.isValid(ownerIdStr)) {
+      throw new BadRequestException(
+        'Phiên đăng nhập không hợp lệ. Vui lòng đăng xuất và đăng nhập lại.',
+      );
+    }
+
     const slug = this.slugify(tourData.title || 'tour');
-    // Đảm bảo slug là duy nhất bằng cách nối thêm timestamp
     const uniqueSlug = `${slug}-${Date.now()}`;
+    const ownerObjectId = new Types.ObjectId(ownerIdStr);
 
     const newTour = new this.tourModel({
-      ...tourData,
+      title: tourData.title,
+      description: tourData.description,
+      price: tourData.price,
+      location: tourData.location,
+      slots: tourData.slots,
+      itinerary: tourData.itinerary ?? [],
+      dates: tourData.dates ?? [],
+      images: tourData.images ?? [],
+      ownerId: ownerObjectId,
       slug: uniqueSlug,
-      status: 'pending', // Mặc định là chờ duyệt
+      status: 'pending',
     });
     return newTour.save();
   }
 
   // Lấy danh sách tour của một chủ tour
   async findByOwner(ownerId: string): Promise<Tour[]> {
-    return this.tourModel.find({ ownerId: new Types.ObjectId(ownerId) }).exec();
+    const ownerIdStr = ownerId?.toString?.() ?? '';
+    if (!Types.ObjectId.isValid(ownerIdStr)) {
+      return [];
+    }
+    const ownerObjectId = new Types.ObjectId(ownerIdStr);
+    return this.tourModel
+      .find({
+        $or: [{ ownerId: ownerObjectId }, { ownerId: ownerIdStr }],
+      })
+      .sort({ createdAt: -1 })
+      .exec();
   }
 
   // Phê duyệt hoặc từ chối tour (Admin)

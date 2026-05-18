@@ -19,12 +19,12 @@ Mở rộng tính năng tự thiết kế tour (Private Tour), tích hợp hệ 
 
 ### 2.2. Hệ thống Voucher (Mã giảm giá)
 - **Backend**:
-  - [ ] Thiết kế Schema cho `Voucher` (Mã, loại giảm giá, giá trị, điều kiện, hạn dùng...).
-  - [ ] API tạo Voucher (cho Nhà cung cấp).
-  - [ ] API áp dụng Voucher và tính toán lại tổng tiền (khi checkout).
+  - [x] Thiết kế Schema cho `Voucher` (Mã, loại giảm giá, giá trị, điều kiện, hạn dùng...).
+  - [x] API tạo Voucher (cho Nhà cung cấp).
+  - [x] API áp dụng Voucher và tính toán lại tổng tiền (khi checkout).
 - **Frontend**:
-  - [ ] Giao diện quản lý Voucher cho Nhà cung cấp.
-  - [ ] Ô nhập Voucher và hiển thị số tiền giảm trừ tại trang thanh toán.
+  - [x] Giao diện quản lý Voucher cho Nhà cung cấp.
+  - [x] Ô nhập Voucher và hiển thị số tiền giảm trừ tại trang thanh toán.
 
 ### 2.3. Vận hành & Quản lý (Operations)
 - **Backend**:
