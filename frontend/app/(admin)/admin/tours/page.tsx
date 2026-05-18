@@ -46,6 +46,7 @@ export default function AdminTourManagement() {
     fetchTours();
   }, []);
 
+  // Hàm gọi API cập nhật trạng thái
   const updateStatus = async (id: string, status: 'approved' | 'rejected') => {
     const token = localStorage.getItem("token");
     try {
@@ -58,11 +59,17 @@ export default function AdminTourManagement() {
         },
         body: JSON.stringify({ status })
       });
+      
       if (res.ok) {
         setTours(tours.map(t => t._id === id ? { ...t, status } : t));
+        alert(`Đã ${status === 'approved' ? 'phê duyệt' : 'từ chối'} tour thành công!`);
+      } else {
+        const errorData = await res.json();
+        alert(`Lỗi: ${errorData.message || "Bạn không có quyền thực hiện hoặc lỗi server."}`);
       }
     } catch (error) {
       console.error("Lỗi cập nhật trạng thái:", error);
+      alert("Đã xảy ra lỗi mạng khi cập nhật!");
     }
   };
 
@@ -100,8 +107,12 @@ export default function AdminTourManagement() {
       <div className="grid grid-cols-1 gap-6">
         {tours.map((tour) => (
           <div key={tour._id} className="bg-white rounded-[32px] p-6 shadow-sm border border-gray-100 flex flex-col md:flex-row gap-8 items-center group hover:shadow-md transition-all">
-            <div className="w-full md:w-48 h-32 rounded-2xl overflow-hidden relative flex-shrink-0 shadow-inner">
-              <Image src={tour.images?.[0] || "https://picsum.photos/seed/t1/400/300"} alt="" fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
+            <div className="w-full md:w-48 h-32 rounded-2xl overflow-hidden relative flex-shrink-0 shadow-inner bg-gray-100 flex items-center justify-center">
+              {tour.images && tour.images.length > 0 ? (
+                <Image src={tour.images[0]} alt="" fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
+              ) : (
+                <span className="text-gray-400 text-sm font-medium">Chưa có ảnh</span>
+              )}
             </div>
             
             <div className="flex-1 text-center md:text-left">
@@ -114,7 +125,8 @@ export default function AdminTourManagement() {
               <h3 className="text-[20px] font-extrabold text-[#1E293B] mb-2">{tour.title}</h3>
               <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-[14px] text-gray-500 font-medium">
                 <span className="flex items-center gap-1.5"><MapPin size={18} weight="fill" className="text-[#38BDF8]" /> {tour.location}</span>
-                <span className="flex items-center gap-1.5"><Tag size={18} weight="fill" className="text-green-500" /> ${tour.price.toLocaleString()}</span>
+                {/* Đổi từ $ sang VNĐ theo yêu cầu của người dùng */}
+                <span className="flex items-center gap-1.5"><Tag size={18} weight="fill" className="text-green-500" /> {tour.price.toLocaleString('vi-VN')} VNĐ</span>
               </div>
             </div>
 

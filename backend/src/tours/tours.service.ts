@@ -45,10 +45,29 @@ export class ToursService {
     return tour;
   }
 
+  // Hàm tạo slug từ chuỗi (Hỗ trợ tiếng Việt)
+  private slugify(text: string): string {
+    return text
+      .toString()
+      .toLowerCase()
+      .normalize('NFD') // Chuẩn hóa Unicode để tách dấu
+      .replace(/[\u0300-\u036f]/g, '') // Xóa các dấu sau khi tách
+      .replace(/[đĐ]/g, 'd') // Chuyển đ thành d
+      .replace(/([^0-9a-z-\s])/g, '') // Xóa ký tự đặc biệt
+      .replace(/(\s+)/g, '-') // Thay khoảng trắng bằng gạch ngang
+      .replace(/-+/g, '-') // Xóa gạch ngang thừa
+      .replace(/^-+|-+$/g, ''); // Xóa gạch ngang ở đầu/cuối
+  }
+
   // Tạo tour mới (Chủ tour)
   async create(tourData: Partial<Tour>): Promise<Tour> {
+    const slug = this.slugify(tourData.title || 'tour');
+    // Đảm bảo slug là duy nhất bằng cách nối thêm timestamp
+    const uniqueSlug = `${slug}-${Date.now()}`;
+
     const newTour = new this.tourModel({
       ...tourData,
+      slug: uniqueSlug,
       status: 'pending', // Mặc định là chờ duyệt
     });
     return newTour.save();

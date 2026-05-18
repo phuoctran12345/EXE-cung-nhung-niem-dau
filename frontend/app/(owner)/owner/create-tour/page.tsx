@@ -33,6 +33,10 @@ export default function CreateTourPage() {
     images: [] as string[],
   });
 
+  // State cho việc tìm kiếm địa điểm (Gợi ý từ Map API)
+  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [searching, setSearching] = useState(false);
+
   // Kiểm tra quyền (Chỉ cho phép tour_owner)
   useEffect(() => {
     const userStr = localStorage.getItem("user");
@@ -46,6 +50,32 @@ export default function CreateTourPage() {
       router.push("/");
     }
   }, [router]);
+
+  // Effect tìm kiếm địa điểm với kỹ thuật Debounce
+  useEffect(() => {
+    // Nếu chuỗi tìm kiếm ngắn hơn 3 ký tự thì không gọi API
+    if (formData.location.length < 3) {
+      setSuggestions([]);
+      return;
+    }
+    
+    // Thiết lập timeout để trì hoãn việc gọi API (Debounce)
+    const delayDebounceFn = setTimeout(async () => {
+      setSearching(true);
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(formData.location)}&countrycodes=vn`);
+        const data = await res.json();
+        setSuggestions(data);
+      } catch (error) {
+        console.error("Lỗi tìm kiếm địa điểm:", error);
+      } finally {
+        setSearching(false);
+      }
+    }, 500);
+
+    // Cleanup function: Hủy timeout nếu người dùng tiếp tục gõ trước khi hết 500ms
+    return () => clearTimeout(delayDebounceFn);
+  }, [formData.location]);
 
   // Xử lý thay đổi input cơ bản
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -176,7 +206,8 @@ export default function CreateTourPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-bold text-gray-400 uppercase mb-2">Giá (USD)</label>
+                {/* Đổi đơn vị từ USD sang VNĐ theo yêu cầu của người dùng */}
+                <label className="block text-sm font-bold text-gray-400 uppercase mb-2">Giá (VNĐ)</label>
                 <div className="relative">
                   <CurrencyDollar className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
                   <input 
@@ -206,7 +237,30 @@ export default function CreateTourPage() {
                     value={formData.location} onChange={handleChange}
                     placeholder="Ví dụ: Hà Nội, TP. Hồ Chí Minh"
                     className="w-full pl-12 pr-5 py-3 rounded-2xl bg-[#F8F9FA] border-none focus:ring-2 focus:ring-[#38BDF8] outline-none"
+                    autoComplete="off"
                   />
+                  {searching && (
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                      <div className="w-4 h-4 border-2 border-[#38BDF8] border-t-transparent rounded-full animate-spin"></div>
+                    </div>
+                  )}
+                  
+                  {suggestions.length > 0 && (
+                    <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-lg border border-gray-100 z-50 max-h-60 overflow-y-auto">
+                      {suggestions.map((item: any, idx) => (
+                        <div 
+                          key={idx}
+                          className="px-5 py-3 hover:bg-[#F8F9FA] cursor-pointer text-sm text-gray-700 border-b border-gray-50 last:border-b-0"
+                          onClick={() => {
+                            setFormData(prev => ({ ...prev, location: item.display_name }));
+                            setSuggestions([]);
+                          }}
+                        >
+                          {item.display_name}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

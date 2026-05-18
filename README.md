@@ -107,7 +107,7 @@
 
 Để tối ưu hóa quá trình xây dựng và kiểm thử hệ thống Travel Match, các nhóm chức năng được phân chia cụ thể thành 3 giai đoạn (Phase) phát triển như sau:
 
-### Phase 1: Nền tảng cốt lõi & Đặt Tour cố định (MVP - Minimum Viable Product)
+###  **Phase 1: Nền tảng cốt lõi & Đặt Tour cố định (MVP - Minimum Viable Product)**
 
 *Mục tiêu: Đảm bảo luồng vận hành cốt lõi hoạt động trơn tru từ khâu đăng ký, đăng tour, tìm kiếm đến thanh toán đặt tour cố định.*
 
