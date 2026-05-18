@@ -20,8 +20,8 @@ interface PrivateDestinationCardProps {
 const PrivateDestinationCard: FC<PrivateDestinationCardProps> = ({ dest, onSelect, isSelected }) => {
   return (
     <div
-      className={`bg-[#F3F4F6] rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all border group cursor-pointer relative ${
-        isSelected ? 'border-[#38BDF8] ring-2 ring-[#38BDF8]/20' : 'border-[#E5E7EB]/50'
+      className={`bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all border group cursor-pointer relative ${
+        isSelected ? 'border-[#38BDF8] ring-2 ring-[#38BDF8]/20' : 'border-gray-100'
       }`}
       onClick={() => onSelect && onSelect(dest)}
     >
@@ -34,10 +34,10 @@ const PrivateDestinationCard: FC<PrivateDestinationCardProps> = ({ dest, onSelec
         </div>
       )}
       
-      <div className="relative h-[100px] w-full overflow-hidden">
+      <div className="relative h-[160px] w-full overflow-hidden">
         <Image src={dest.image} alt={dest.name} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
       </div>
-      <div className="p-2 bg-[#F3F4F6]">
+      <div className="p-3 bg-white">
         <h3 className="font-bold text-[#1C2B38] text-[14px] mb-1">{dest.name}</h3>
         <p className="text-gray-500 text-[12px]">{dest.location}</p>
       </div>

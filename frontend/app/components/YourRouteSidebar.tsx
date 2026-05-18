@@ -39,7 +39,7 @@ export default function YourRouteSidebar({
   onContinue,
 }: YourRouteSidebarProps) {
   return (
-    <div className="w-full lg:w-[420px] bg-[#F3F4F6] rounded-[24px] border-[3px] border-[#38BDF8] p-7 sticky top-24 shadow-lg shadow-[#38BDF8]/10 flex-shrink-0">
+    <div className="w-full lg:w-[420px] bg-white rounded-[24px] border border-gray-100 p-7 sticky top-24 shadow-[0_8px_30px_rgb(0,0,0,0.08)] flex-shrink-0">
       {/* Tiêu đề góc nhìn tổng quan lộ trình */}
       <h2 className="text-[26px] font-bold font-serif text-[#1C2B38] mb-1">
         {activeStep === 1 ? "Your Route" : "Your Route Summary"}
@@ -86,9 +86,21 @@ export default function YourRouteSidebar({
       </div>
 
       {/* Nút tiếp tục bước kế tiếp */}
+      {activeStep === 1 && (!startDate || !endDate) && (
+        <p className="text-rose-500 text-[12px] font-medium mt-4 text-center bg-rose-50 py-2 rounded-lg border border-rose-100">
+          ⚠️ Vui lòng chọn ngày đi ở trên để tiếp tục!
+        </p>
+      )}
       <button
-        className="w-full bg-[#38BDF8] hover:bg-[#0284C7] text-white font-bold py-4 rounded-xl mt-6 transition-colors shadow-md text-[15px] select-none uppercase tracking-wide hover:scale-[1.01] duration-200"
-        onClick={onContinue}
+        className={`w-full font-bold py-4 rounded-xl mt-3 transition-all shadow-md text-[15px] select-none uppercase tracking-wide duration-200 ${
+          activeStep === 1 && (!startDate || !endDate)
+            ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+            : 'bg-[#38BDF8] hover:bg-[#0284C7] text-white hover:scale-[1.01]'
+        }`}
+        onClick={() => {
+          if (activeStep === 1 && (!startDate || !endDate)) return;
+          onContinue();
+        }}
       >
         {activeStep === 1 && "CONTINUE TO ACTIVITIES"}
         {activeStep === 2 && "CONTINUE TO ITINERARY"}

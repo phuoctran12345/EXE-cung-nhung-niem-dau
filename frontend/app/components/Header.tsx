@@ -10,6 +10,8 @@ import ProfileDropdown from "./ProfileDropdown"; // Import component ProfileDrop
 export default function Header() {
   const pathname = usePathname();
   const isHome = pathname === "/";
+  const isPrivateTour = pathname === "/privateTour" || pathname?.startsWith("/privateTour");
+  const isTransparent = isHome || isPrivateTour;
   
   // Trạng thái điều khiển việc ẩn/hiển thị của Popup Đăng nhập
   const [isLoginOpen, setIsLoginOpen] = useState(false);
@@ -52,8 +54,8 @@ export default function Header() {
 
   return (
     <>
-      <header className={`${isHome ? 'absolute top-0 w-full z-50 pt-6' : 'relative z-50 bg-[#1A2434] py-4'}`}>
-        <div className={`max-w-[1400px] mx-auto px-6 lg:px-12 ${isHome ? 'h-16' : 'h-20'} flex items-center justify-between text-white`}>
+      <header className={`${isTransparent ? 'absolute top-0 w-full z-50 pt-6' : 'relative z-50 bg-[#1A2434] py-4'}`}>
+        <div className={`max-w-[1400px] mx-auto px-6 lg:px-12 ${isTransparent ? 'h-16' : 'h-20'} flex items-center justify-between text-white`}>
 
           {/* Logo */}
           <Link href="/" className="relative w-[180px] h-[45px] flex-shrink-0 cursor-pointer">
@@ -64,7 +66,7 @@ export default function Header() {
           <div className="hidden lg:flex items-center gap-10 text-[15px] font-medium">
             <Link href="/" className={`text-white relative after:content-[''] after:absolute after:w-full after:h-[2px] ${isHome ? 'after:bg-white' : 'after:bg-transparent hover:after:bg-[#38BDF8]'} after:-bottom-2 after:left-0 transition-all`}>Trang chủ</Link>
             <Link href="/tours" className={`text-white relative after:content-[''] after:absolute after:w-full after:h-[2px] ${pathname === '/tours' || pathname?.startsWith('/tour/') ? 'after:bg-[#38BDF8]' : 'after:bg-transparent hover:after:bg-[#38BDF8]'} after:-bottom-2 after:left-0 transition-all`}>Danh sách Tour</Link>
-            <Link href="/privateTour" className="text-white/80 hover:text-white transition-colors">Tour Cá nhân</Link>
+            <Link href="/privateTour" className={`text-white relative after:content-[''] after:absolute after:w-full after:h-[2px] ${isPrivateTour ? 'after:bg-white' : 'after:bg-transparent hover:after:bg-[#38BDF8]'} after:-bottom-2 after:left-0 transition-all`}>Tour Cá nhân</Link>
             
             {/* Nút Trở thành đối tác */}
             {(!user || user.role === 'customer') && (

@@ -8,6 +8,7 @@ import { UsersModule } from './users/users.module';
 import { ToursModule } from './tours/tours.module';
 import { BookingsModule } from './bookings/bookings.module';
 import { UploadsModule } from './uploads/uploads.module';
+import { AiModule } from './ai/ai.module';
 
 // Module chính của ứng dụng backend
 @Module({
@@ -30,6 +31,7 @@ import { UploadsModule } from './uploads/uploads.module';
     ToursModule,
     BookingsModule,
     UploadsModule,
+    AiModule,
   ],
   controllers: [AppController],
   providers: [AppService],
