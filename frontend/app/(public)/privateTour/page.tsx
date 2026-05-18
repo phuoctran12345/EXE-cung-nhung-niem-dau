@@ -74,7 +74,7 @@ export default function PrivateTourPage() {
     if (dests.length === 0) return {};
     const { days: totalDays, nights: totalNights } = getDaysAndNights(start, end);
     
-    const newMap: Record<number, { days: number; nights: number }> = {};
+    const newMap: Record<string, { days: number; nights: number }> = {};
     
     const baseDays = Math.floor(totalDays / dests.length);
     const extraDays = totalDays % dests.length;
