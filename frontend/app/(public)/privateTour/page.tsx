@@ -173,7 +173,7 @@ export default function PrivateTourPage() {
 
   // Tính toán động ngày đến ngày đi dựa trên số ngày lưu trú của từng địa điểm
   const calculateDateRanges = () => {
-    const ranges: Record<number, string> = {};
+    const ranges: Record<string, string> = {};
     let currentOffset = 0;
     const tourStartDate = startDate || new Date();
     
