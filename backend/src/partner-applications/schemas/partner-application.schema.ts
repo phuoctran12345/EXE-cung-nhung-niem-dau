@@ -23,6 +23,10 @@ export class PartnerApplication {
   @Prop()
   licenseUrl?: string;
 
+  // Thêm trường lưu trữ PDF hợp đồng
+  @Prop()
+  contractUrl?: string;
+
   @Prop({ required: true })
   representativeName: string;
 

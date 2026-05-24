@@ -66,6 +66,25 @@ export class PartnerApplicationsController {
     res.send(file.buffer);
   }
 
+  // API lấy file PDF hợp đồng
+  @Get(':id/contract')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  async streamContract(
+    @Param('id') id: string,
+    @Query('download') download: string,
+    @Res() res: Response,
+  ) {
+    const file = await this.partnerApplicationsService.fetchContractFile(id);
+    const disposition = download === '1' ? 'attachment' : 'inline';
+    res.set({
+      'Content-Type': file.contentType,
+      'Content-Disposition': `${disposition}; filename="${file.filename}"`,
+      'Content-Length': file.buffer.length,
+    });
+    res.send(file.buffer);
+  }
+
   @Get(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')

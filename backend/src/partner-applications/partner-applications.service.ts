@@ -173,4 +173,34 @@ export class PartnerApplicationsService {
       filename: `${application.companyName.replace(/\s+/g, '-')}-giay-phep.${ext}`,
     };
   }
+
+  // Hàm tải file PDF hợp đồng từ Cloudinary về buffer
+  async fetchContractFile(id: string) {
+    const application = await this.applicationModel.findById(id);
+    if (!application) {
+      throw new NotFoundException('Không tìm thấy hồ sơ đăng ký');
+    }
+    if (!application.contractUrl) {
+      throw new NotFoundException('Hồ sơ không có PDF hợp đồng');
+    }
+
+    console.log('[PartnerApplications] fetchContractFile', {
+      id,
+      contractUrl: application.contractUrl,
+    });
+
+    let buffer: Buffer;
+    try {
+      buffer = await this.cloudinaryService.downloadByUrl(application.contractUrl);
+    } catch (err) {
+      console.error('[PartnerApplications] fetchContractFile failed', err);
+      throw new NotFoundException('Không tải được hợp đồng từ Cloudinary');
+    }
+
+    return {
+      buffer,
+      contentType: 'application/pdf',
+      filename: `${application.companyName.replace(/\s+/g, '-')}-hop-dong.pdf`,
+    };
+  }
 }

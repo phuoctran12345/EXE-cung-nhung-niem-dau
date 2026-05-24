@@ -10,6 +10,8 @@ import {
   ShieldCheck,
   DownloadSimple
 } from "@phosphor-icons/react";
+import * as htmlToImage from "html-to-image";
+import { jsPDF } from "jspdf";
 import { STORAGE_KEY } from "../page";
 
 interface DraftData {
@@ -27,6 +29,7 @@ export default function PartnerContractPage() {
   const [draft, setDraft] = useState<DraftData | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [tempSignature, setTempSignature] = useState<string | null>(null);
 
   // Refs và State cho tính năng vẽ chữ ký
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -146,8 +149,62 @@ export default function PartnerContractPage() {
 
     setSubmitting(true);
     setError("");
+
     try {
+      // 1. Gắn tạm chữ ký vào DOM để render ra PDF
+      setTempSignature(signatureDataUrl || null);
+      // Đợi React render xong ảnh chữ ký
+      await new Promise(resolve => setTimeout(resolve, 200));
+
+      const contractElement = document.getElementById("contract-content");
+      if (!contractElement) throw new Error("Không tìm thấy nội dung hợp đồng");
+
+      // Xóa giới hạn chiều cao để capture toàn bộ hợp đồng
+      const originalHeight = contractElement.style.height;
+      const originalOverflow = contractElement.style.overflow;
+      contractElement.style.height = 'auto';
+      contractElement.style.overflow = 'visible';
+
+      // 2. Chụp ảnh HTML bằng html-to-image (hỗ trợ tốt hơn Tailwind v4 oklch)
+      const imgData = await htmlToImage.toPng(contractElement, { pixelRatio: 2 });
+      
+      // Khôi phục giao diện
+      contractElement.style.height = originalHeight;
+      contractElement.style.overflow = originalOverflow;
+      setTempSignature(null);
+
+      // 3. Tạo file PDF bằng jsPDF
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      
+      // Lấy kích thước thật của ảnh để tính chiều cao
+      const imgProps = pdf.getImageProperties(imgData);
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      
+      const pdfBlob = pdf.output('blob');
+      const pdfFile = new File([pdfBlob], "hop-dong.pdf", { type: "application/pdf" });
+
+      // 4. Upload PDF lên Cloudinary qua backend
+      const formData = new FormData();
+      formData.append("files", pdfFile);
+
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4001/api";
+      const uploadRes = await fetch(`${apiUrl}/uploads/images`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+      const uploadResult = await uploadRes.json();
+      
+      if (!uploadRes.ok || !uploadResult.success || !uploadResult.data?.[0]) {
+        throw new Error("Không thể upload PDF hợp đồng lên máy chủ.");
+      }
+      
+      const contractUrl = uploadResult.data[0];
+
+      // 5. Gửi dữ liệu đăng ký cùng contractUrl
       const res = await fetch(`${apiUrl}/partner-applications`, {
         method: "POST",
         headers: {
@@ -160,6 +217,7 @@ export default function PartnerContractPage() {
           address: draft.address,
           website: draft.website || undefined,
           licenseUrl: draft.licenseUrl || undefined,
+          contractUrl: contractUrl,
           representativeName: signature,
           signatureDataUrl,
         }),
@@ -169,13 +227,14 @@ export default function PartnerContractPage() {
         const msg = Array.isArray(result.message)
           ? result.message.join(", ")
           : result.message || "Không thể gửi hồ sơ. Vui lòng thử lại.";
-        setError(msg);
-        return;
+        throw new Error(msg);
       }
       sessionStorage.removeItem(STORAGE_KEY);
       router.push("/be-partner/success");
-    } catch {
-      setError("Lỗi kết nối máy chủ.");
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || "Lỗi kết nối máy chủ.");
+      setTempSignature(null);
     } finally {
       setSubmitting(false);
     }
@@ -214,7 +273,7 @@ export default function PartnerContractPage() {
           
           {/* Cột trái: Nội dung hợp đồng */}
           <div className="lg:col-span-2 space-y-6">
-            <div className="bg-white rounded-[32px] shadow-sm border border-gray-100 p-8 md:p-10 h-[600px] overflow-y-auto custom-scrollbar relative">
+            <div id="contract-content" className="bg-white rounded-[32px] shadow-sm border border-gray-100 p-8 md:p-10 h-[600px] overflow-y-auto custom-scrollbar relative">
               <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 bg-blue-50 text-[#38BDF8] rounded-xl flex items-center justify-center">
@@ -225,7 +284,7 @@ export default function PartnerContractPage() {
                     <p className="text-[12px] text-gray-400 font-bold uppercase tracking-widest">Số: TM-2024-001</p>
                   </div>
                 </div>
-                <button className="flex items-center gap-2 text-[14px] font-bold text-[#38BDF8] hover:underline">
+                <button className="flex items-center gap-2 text-[14px] font-bold text-[#38BDF8] hover:underline" data-html2canvas-ignore="true">
                   <DownloadSimple size={20} /> Tải PDF
                 </button>
               </div>
@@ -249,6 +308,22 @@ export default function PartnerContractPage() {
                 <p>...</p>
                 <p className="text-sm italic text-gray-400">(Nội dung hợp đồng được giản lược để minh họa giao diện)</p>
               </div>
+
+              {/* Phần hiển thị chữ ký khi in PDF */}
+              {tempSignature && (
+                <div className="mt-12 flex justify-between px-10 border-t border-gray-100 pt-8">
+                  <div className="text-center">
+                    <p className="font-bold text-[#1E293B] mb-2">ĐẠI DIỆN TRAVEL MATCH</p>
+                    <p className="italic text-gray-400 text-sm mb-16">(Chữ ký điện tử)</p>
+                    <p className="font-bold text-[#1E293B]">Trần Hồng Phước</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="font-bold text-[#1E293B] mb-2">ĐẠI DIỆN ĐỐI TÁC</p>
+                    <img src={tempSignature} alt="Chữ ký" className="h-16 object-contain mx-auto mb-2" />
+                    <p className="font-bold text-[#1E293B]">{signature}</p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

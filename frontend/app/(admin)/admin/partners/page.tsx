@@ -28,6 +28,7 @@ interface PartnerApplication {
   address: string;
   website?: string;
   licenseUrl?: string;
+  contractUrl?: string;
   representativeName: string;
   signatureDataUrl?: string;
   status: "pending" | "approved" | "rejected";
@@ -41,14 +42,16 @@ type TabFilter = "pending" | "approved" | "rejected" | "all";
 
 const LICENSE_DEBUG = "[AdminPartners:License]";
 
-function LicensePreview({
+function DocumentPreview({
   applicationId,
   apiUrl,
-  licenseUrl,
+  documentUrl,
+  documentType = 'license'
 }: {
   applicationId: string;
   apiUrl: string;
-  licenseUrl?: string;
+  documentUrl?: string;
+  documentType?: 'license' | 'contract';
 }) {
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [mimeType, setMimeType] = useState<string>("");
@@ -60,12 +63,12 @@ function LicensePreview({
     let cancelled = false;
     const token = localStorage.getItem("token");
 
-    const licenseEndpoint = `${apiUrl}/partner-applications/${applicationId}/license`;
+    const endpoint = `${apiUrl}/partner-applications/${applicationId}/${documentType}`;
 
-    console.log(`${LICENSE_DEBUG} LicensePreview mount`, {
+    console.log(`${LICENSE_DEBUG} DocumentPreview mount`, {
       applicationId,
-      licenseUrl,
-      licenseEndpoint,
+      documentUrl,
+      endpoint,
       hasToken: Boolean(token),
     });
 
@@ -73,50 +76,34 @@ function LicensePreview({
       setLoading(true);
       setError("");
       try {
-        console.log(`${LICENSE_DEBUG} Fetching license...`, { licenseEndpoint });
-        const res = await fetch(licenseEndpoint, {
+        console.log(`${LICENSE_DEBUG} Fetching document...`, { endpoint });
+        const res = await fetch(endpoint, {
           headers: { Authorization: `Bearer ${token}` },
-        });
-
-        console.log(`${LICENSE_DEBUG} Response`, {
-          ok: res.ok,
-          status: res.status,
-          statusText: res.statusText,
-          contentType: res.headers.get("content-type"),
-          contentLength: res.headers.get("content-length"),
-          contentDisposition: res.headers.get("content-disposition"),
         });
 
         if (!res.ok) {
           const errText = await res.text().catch(() => "");
-          console.error(`${LICENSE_DEBUG} Fetch failed`, {
-            status: res.status,
-            body: errText.slice(0, 500),
-          });
           throw new Error(`HTTP ${res.status}: ${errText || res.statusText}`);
         }
 
         const blob = await res.blob();
         if (cancelled) return;
 
-        const contentType =
+        let contentType =
           res.headers.get("content-type") || blob.type || "application/octet-stream";
 
-        console.log(`${LICENSE_DEBUG} Blob received`, {
-          size: blob.size,
-          type: blob.type,
-          contentType,
-          isPdfMagic: contentType.includes("pdf"),
-        });
+        if (documentUrl?.toLowerCase().includes('.pdf')) {
+          contentType = 'application/pdf';
+        }
 
-        objectUrl = URL.createObjectURL(blob);
+        const typedBlob = new Blob([blob], { type: contentType });
+        objectUrl = URL.createObjectURL(typedBlob);
         setMimeType(contentType);
         setBlobUrl(objectUrl);
-        console.log(`${LICENSE_DEBUG} Preview ready`, { blobUrl: objectUrl, mimeType: contentType });
       } catch (err) {
         console.error(`${LICENSE_DEBUG} Load error`, err);
         if (!cancelled) {
-          setError("Không thể tải giấy phép kinh doanh. Vui lòng thử lại.");
+          setError("Không thể tải tài liệu. Vui lòng thử lại.");
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -128,19 +115,9 @@ function LicensePreview({
       cancelled = true;
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [applicationId, apiUrl, licenseUrl]);
+  }, [applicationId, apiUrl, documentUrl, documentType]);
 
   const handleViewDocument = () => {
-    const licenseEndpoint = `${apiUrl}/partner-applications/${applicationId}/license`;
-    console.log(`${LICENSE_DEBUG} Xem tài liệu đính kèm tại đây — click`, {
-      applicationId,
-      licenseUrl,
-      licenseEndpoint,
-      blobUrl,
-      mimeType,
-      loading,
-      error,
-    });
     if (blobUrl) {
       window.open(blobUrl, "_blank", "noopener,noreferrer");
     }
@@ -148,7 +125,7 @@ function LicensePreview({
 
   const handleDownload = async () => {
     const token = localStorage.getItem("token");
-    const downloadUrl = `${apiUrl}/partner-applications/${applicationId}/license?download=1`;
+    const downloadUrl = `${apiUrl}/partner-applications/${applicationId}/${documentType}?download=1`;
     console.log(`${LICENSE_DEBUG} Download`, { downloadUrl });
     const res = await fetch(downloadUrl, {
       headers: { Authorization: `Bearer ${token}` },
@@ -164,10 +141,10 @@ function LicensePreview({
     const a = document.createElement("a");
     a.href = url;
     a.download = mimeType.includes("pdf")
-      ? "giay-phep-kinh-doanh.pdf"
+      ? `${documentType}.pdf`
       : mimeType.includes("png")
-        ? "giay-phep-kinh-doanh.png"
-        : "giay-phep-kinh-doanh.jpg";
+        ? `${documentType}.png`
+        : `${documentType}.jpg`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -475,10 +452,11 @@ export default function AdminPartnersPage() {
                     <p className="text-xs text-gray-500 break-all font-mono">
                       URL lưu trữ: {selected.licenseUrl}
                     </p>
-                    <LicensePreview
+                    <DocumentPreview
                       applicationId={selected._id}
                       apiUrl={apiUrl}
-                      licenseUrl={selected.licenseUrl}
+                      documentUrl={selected.licenseUrl}
+                      documentType="license"
                     />
                   </>
                 ) : (
@@ -498,6 +476,27 @@ export default function AdminPartnersPage() {
                   />
                 </div>
               )}
+
+              <div className="space-y-3">
+                <p className="text-xs font-bold text-gray-400 uppercase mb-2">Hợp đồng hợp tác</p>
+                {selected.contractUrl ? (
+                  <>
+                    <p className="text-xs text-gray-500 break-all font-mono">
+                      URL lưu trữ: {selected.contractUrl}
+                    </p>
+                    <DocumentPreview
+                      applicationId={selected._id}
+                      apiUrl={apiUrl}
+                      documentUrl={selected.contractUrl}
+                      documentType="contract"
+                    />
+                  </>
+                ) : (
+                  <p className="text-sm text-amber-600 font-medium">
+                    Hồ sơ chưa có file Hợp đồng (chỉ áp dụng với hồ sơ nộp mới sau khi update hệ thống)
+                  </p>
+                )}
+              </div>
 
               {selected.status === "rejected" && selected.rejectionReason && (
                 <div className="p-4 bg-red-50 rounded-2xl border border-red-100">
