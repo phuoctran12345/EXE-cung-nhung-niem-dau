@@ -34,6 +34,7 @@ export default function Header() {
   const pathname = usePathname();
   const isHome = pathname === "/";
   const isPrivateTour = pathname === "/privateTour" || pathname?.startsWith("/privateTour");
+  const isBePartner = pathname === "/be-partner" || pathname?.startsWith("/be-partner");
   const isTransparent = isHome || isPrivateTour;
   
   // Trạng thái điều khiển việc ẩn/hiển thị của Popup Đăng nhập
@@ -88,16 +89,8 @@ export default function Header() {
             <Link href="/" className={`text-white relative after:content-[''] after:absolute after:w-full after:h-[2px] ${isHome ? 'after:bg-white' : 'after:bg-transparent hover:after:bg-[#38BDF8]'} after:-bottom-2 after:left-0 transition-all`}>Trang chủ</Link>
             <Link href="/tours" className={`text-white relative after:content-[''] after:absolute after:w-full after:h-[2px] ${pathname === '/tours' || pathname?.startsWith('/tour/') ? 'after:bg-[#38BDF8]' : 'after:bg-transparent hover:after:bg-[#38BDF8]'} after:-bottom-2 after:left-0 transition-all`}>Danh sách Tour</Link>
             <Link href="/privateTour" className={`text-white relative after:content-[''] after:absolute after:w-full after:h-[2px] ${isPrivateTour ? 'after:bg-white' : 'after:bg-transparent hover:after:bg-[#38BDF8]'} after:-bottom-2 after:left-0 transition-all`}>Tour Cá nhân</Link>
-            
-            {/* Nút Trở thành đối tác */}
             {showPartnerLink && (
-              <Link 
-                href="/be-partner" 
-                className="bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg border border-white/20 transition-all flex items-center gap-2 group"
-              >
-                <span className="text-[#38BDF8] group-hover:scale-110 transition-transform text-lg">★</span>
-                <span>Hợp tác với chúng tôi</span>
-              </Link>
+              <Link href="/be-partner" className={`text-white relative after:content-[''] after:absolute after:w-full after:h-[2px] ${isPrivateTour ? 'after:bg-white' : 'after:bg-transparent hover:after:bg-[#38BDF8]'} after:-bottom-2 after:left-0 transition-all`}>Hợp tác với chúng tôi</Link>
             )}
           </div>
 

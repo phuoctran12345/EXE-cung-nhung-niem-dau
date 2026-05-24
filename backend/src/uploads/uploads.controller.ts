@@ -13,12 +13,12 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 export class UploadsController {
   constructor(private readonly cloudinaryService: CloudinaryService) {}
 
-  // API Upload nhiều ảnh (Dành cho đăng tour)
+  // API Upload file (ảnh, PDF giấy phép kinh doanh, ...)
   @Post('images')
   @UseGuards(JwtAuthGuard)
-  @UseInterceptors(FilesInterceptor('files', 10)) // Cho phép tối đa 10 ảnh
+  @UseInterceptors(FilesInterceptor('files', 10))
   async uploadImages(@UploadedFiles() files: Express.Multer.File[]) {
-    console.log(`>>> [BACKEND] Nhận yêu cầu upload ${files.length} ảnh`);
+    console.log(`>>> [BACKEND] Nhận yêu cầu upload ${files.length} file`);
     const urls = await this.cloudinaryService.uploadImages(files);
     return {
       success: true,

@@ -29,4 +29,16 @@ export class UsersService {
     if (!user) throw new NotFoundException('Không tìm thấy người dùng');
     return user;
   }
+
+  async findById(id: string): Promise<UserDocument | null> {
+    return this.userModel.findById(id).exec();
+  }
+
+  async updateRole(id: string, role: string): Promise<User> {
+    const user = await this.userModel
+      .findByIdAndUpdate(id, { role, status: 'active' }, { new: true })
+      .exec();
+    if (!user) throw new NotFoundException('Không tìm thấy người dùng');
+    return user;
+  }
 }

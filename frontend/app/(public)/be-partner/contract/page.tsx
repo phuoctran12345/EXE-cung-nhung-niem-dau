@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { 
   FileText, 
   PencilSimpleLine, 
@@ -9,10 +10,23 @@ import {
   ShieldCheck,
   DownloadSimple
 } from "@phosphor-icons/react";
+import { STORAGE_KEY } from "../page";
+
+interface DraftData {
+  companyName: string;
+  taxCode: string;
+  address: string;
+  website?: string;
+  licenseUrl?: string;
+}
 
 export default function PartnerContractPage() {
+  const router = useRouter();
   const [signed, setSigned] = useState(false);
   const [signature, setSignature] = useState("");
+  const [draft, setDraft] = useState<DraftData | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
   // Refs và State cho tính năng vẽ chữ ký
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -20,6 +34,19 @@ export default function PartnerContractPage() {
   const [isCanvasEmpty, setIsCanvasEmpty] = useState(true);
 
   // Khởi tạo cấu hình canvas
+  useEffect(() => {
+    const raw = sessionStorage.getItem(STORAGE_KEY);
+    if (!raw) {
+      router.replace("/be-partner");
+      return;
+    }
+    try {
+      setDraft(JSON.parse(raw));
+    } catch {
+      router.replace("/be-partner");
+    }
+  }, [router]);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -105,6 +132,63 @@ export default function PartnerContractPage() {
     setIsCanvasEmpty(true);
   };
 
+  const handleSubmit = async () => {
+    if (!draft || !signed || !signature || isCanvasEmpty) return;
+
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setError("Vui lòng đăng nhập để gửi hồ sơ.");
+      return;
+    }
+
+    const canvas = canvasRef.current;
+    const signatureDataUrl = canvas?.toDataURL("image/png");
+
+    setSubmitting(true);
+    setError("");
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4001/api";
+      const res = await fetch(`${apiUrl}/partner-applications`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          companyName: draft.companyName,
+          taxCode: draft.taxCode,
+          address: draft.address,
+          website: draft.website || undefined,
+          licenseUrl: draft.licenseUrl || undefined,
+          representativeName: signature,
+          signatureDataUrl,
+        }),
+      });
+      const result = await res.json();
+      if (!res.ok) {
+        const msg = Array.isArray(result.message)
+          ? result.message.join(", ")
+          : result.message || "Không thể gửi hồ sơ. Vui lòng thử lại.";
+        setError(msg);
+        return;
+      }
+      sessionStorage.removeItem(STORAGE_KEY);
+      router.push("/be-partner/success");
+    } catch {
+      setError("Lỗi kết nối máy chủ.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (!draft) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-[#38BDF8] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#F8FAFC] pt-12 pb-24 px-4">
       <div className="max-w-[1000px] mx-auto">
@@ -147,6 +231,8 @@ export default function PartnerContractPage() {
               </div>
 
               <div className="prose prose-slate max-w-none text-gray-600 font-medium leading-relaxed space-y-6">
+                <p className="font-bold text-[#1E293B]">BÊN ĐỐI TÁC: {draft.companyName}</p>
+                <p className="text-sm">MST: {draft.taxCode} · {draft.address}</p>
                 <p className="font-bold text-[#1E293B]">ĐIỀU 1: ĐỐI TƯỢNG HỢP ĐỒNG</p>
                 <p>Travel Match cung cấp nền tảng công nghệ giúp Đối tác tiếp cận khách hàng và quản lý tour du lịch trực tuyến.</p>
                 
@@ -232,12 +318,17 @@ export default function PartnerContractPage() {
                 </label>
 
                 <div className="pt-4 space-y-3">
+                  {error && (
+                    <p className="text-sm text-red-500 font-medium bg-red-50 px-4 py-3 rounded-xl">
+                      {error}
+                    </p>
+                  )}
                   <button 
-                    disabled={!signed || !signature || isCanvasEmpty}
-                    onClick={() => window.location.href = '/be-partner/success'}
-                    className={`w-full py-4 rounded-2xl font-bold text-lg shadow-lg transition-all flex items-center justify-center gap-3 ${signed && signature && !isCanvasEmpty ? 'bg-[#38BDF8] text-white shadow-[#38BDF8]/20 hover:bg-[#32AADB] active:scale-95' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
+                    disabled={!signed || !signature || isCanvasEmpty || submitting}
+                    onClick={handleSubmit}
+                    className={`w-full py-4 rounded-2xl font-bold text-lg shadow-lg transition-all flex items-center justify-center gap-3 ${signed && signature && !isCanvasEmpty && !submitting ? 'bg-[#38BDF8] text-white shadow-[#38BDF8]/20 hover:bg-[#32AADB] active:scale-95' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
                   >
-                    Xác nhận & Ký kết <ArrowRight size={20} weight="bold" />
+                    {submitting ? "Đang gửi hồ sơ..." : "Xác nhận & Gửi duyệt"} <ArrowRight size={20} weight="bold" />
                   </button>
                   <button 
                     onClick={() => window.history.back()}

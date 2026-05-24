@@ -10,6 +10,7 @@ import { BookingsModule } from './bookings/bookings.module';
 import { UploadsModule } from './uploads/uploads.module';
 import { AiModule } from './ai/ai.module';
 import { VouchersModule } from './vouchers/vouchers.module';
+import { PartnerApplicationsModule } from './partner-applications/partner-applications.module';
 
 // Module chính của ứng dụng backend
 @Module({
@@ -34,6 +35,7 @@ import { VouchersModule } from './vouchers/vouchers.module';
     VouchersModule,
     UploadsModule,
     AiModule,
+    PartnerApplicationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
