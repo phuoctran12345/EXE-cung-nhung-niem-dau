@@ -3,9 +3,32 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react"; // Nhập hook useState để quản lý trạng thái đóng/mở popup
+import { useEffect, useLayoutEffect, useRef, useState } from "react"; // Nhập hook useState để quản lý trạng thái đóng/mở popup
 import LoginModal from "./LoginModal"; // Import component LoginModal mới tạo
 import ProfileDropdown from "./ProfileDropdown"; // Import component ProfileDropdown vừa tạo
+
+interface StoredUser {
+  name: string;
+  email: string;
+  avatarUrl?: string;
+  role?: string;
+}
+
+type AuthState =
+  | { status: "loading" }
+  | { status: "ready"; user: StoredUser | null };
+
+function readStoredUser(): StoredUser | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const stored = localStorage.getItem("user");
+    if (!stored || stored === "undefined") return null;
+    return JSON.parse(stored);
+  } catch {
+    localStorage.removeItem("user");
+    return null;
+  }
+}
 
 export default function Header() {
   const pathname = usePathname();
@@ -16,21 +39,19 @@ export default function Header() {
   // Trạng thái điều khiển việc ẩn/hiển thị của Popup Đăng nhập
   const [isLoginOpen, setIsLoginOpen] = useState(false);
 
-  // Trạng thái người dùng và dropdown profile
-  const [user, setUser] = useState<any>(null);
+  // Gộp user + trạng thái đọc auth vào 1 state — tránh flash giữa các lần render
+  const [auth, setAuth] = useState<AuthState>({ status: "loading" });
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Kiểm tra trạng thái đăng nhập khi component mount
-  useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (e) {
-        console.error("Lỗi parse user từ localStorage", e);
-      }
-    }
+  const user = auth.status === "ready" ? auth.user : null;
+  const authChecked = auth.status === "ready";
+  const isPartnerOrAdmin = user?.role === "tour_owner" || user?.role === "admin";
+  const showPartnerLink = authChecked && !isPartnerOrAdmin;
+
+  // useLayoutEffect chạy trước khi browser paint → không bị nháy UI
+  useLayoutEffect(() => {
+    setAuth({ status: "ready", user: readStoredUser() });
   }, []);
 
   // Đóng dropdown khi click ra ngoài
@@ -47,7 +68,7 @@ export default function Header() {
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-    setUser(null);
+    setAuth({ status: "ready", user: null });
     setIsProfileOpen(false);
     window.location.reload();
   };
@@ -69,7 +90,7 @@ export default function Header() {
             <Link href="/privateTour" className={`text-white relative after:content-[''] after:absolute after:w-full after:h-[2px] ${isPrivateTour ? 'after:bg-white' : 'after:bg-transparent hover:after:bg-[#38BDF8]'} after:-bottom-2 after:left-0 transition-all`}>Tour Cá nhân</Link>
             
             {/* Nút Trở thành đối tác */}
-            {(!user || user.role === 'customer') && (
+            {showPartnerLink && (
               <Link 
                 href="/be-partner" 
                 className="bg-white/10 hover:bg-white/20 px-4 py-2 rounded-lg border border-white/20 transition-all flex items-center gap-2 group"
@@ -82,7 +103,7 @@ export default function Header() {
 
           {/* Right Actions */}
           <div className="flex items-center gap-4 text-[15px] font-medium">
-            {user ? (
+            {!authChecked ? null : user ? (
               // Hiển thị Profile khi đã đăng nhập
               <div className="relative" ref={dropdownRef}>
                 <button 

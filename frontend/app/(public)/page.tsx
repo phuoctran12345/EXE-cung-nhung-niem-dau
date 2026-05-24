@@ -272,10 +272,10 @@ export default function Home() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 px-2">
               {[
-                { id: "halong", title: "Vịnh Hạ Long", location: "Quảng Ninh", price: 150, img: "https://images.unsplash.com/photo-1559592442-7e18259f63eb?q=80&w=600", duration: "2 ngày 1 đêm" },
-                { id: "hoian", title: "Phố Cổ Hội An", location: "Đà Nẵng", price: 45, img: "https://images.unsplash.com/photo-1555581938-2301101374c6?q=80&w=600", duration: "1 ngày" },
-                { id: "hagiang", title: "Cột Cờ Lũng Cú", location: "Hà Giang", price: 35, img: "https://images.unsplash.com/photo-1528127269322-539801943592?q=80&w=600", duration: "2 giờ" },
-                { id: "phuquoc", title: "Đảo Ngọc Phú Quốc", location: "Phú Quốc", price: 210, img: "https://images.unsplash.com/photo-1589782182703-2aad67281b51?q=80&w=600", duration: "3 ngày 2 đêm" }
+                { id: "halong", title: "Vịnh Hạ Long", location: "Quảng Ninh", price: 150, img: "/hero-bg.png", duration: "2 ngày 1 đêm" },
+                { id: "hoian", title: "Phố Cổ Hội An", location: "Đà Nẵng", price: 45, img: "/10.png", duration: "1 ngày" },
+                { id: "hagiang", title: "Cột Cờ Lũng Cú", location: "Hà Giang", price: 35, img: "/9.png", duration: "2 giờ" },
+                { id: "phuquoc", title: "Đảo Ngọc Phú Quốc", location: "Phú Quốc", price: 210, img: "/14.png", duration: "3 ngày 2 đêm" }
               ].map((item) => (
                 <TourCard key={item.id} {...item} />
               ))}
