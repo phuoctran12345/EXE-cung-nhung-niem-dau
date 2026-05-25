@@ -29,10 +29,10 @@ function CancelContent() {
         {/* Nút quay lại để tiếp tục khám phá tour */}
         <div className="space-y-4">
           <Link 
-            href="/tours" 
+            href="/profile" 
             className="flex items-center justify-center gap-2 w-full bg-[#1A2434] hover:bg-black text-white py-4 rounded-2xl font-bold transition-all shadow-xl hover:-translate-y-1"
           >
-            <ArrowLeft size={20} weight="bold" /> Quay lại danh sách Tour
+            <ArrowLeft size={20} weight="bold" /> Quay lại trang cá nhân (Dashboard)
           </Link>
           
           <div className="flex items-center justify-center gap-2 text-[14px] text-gray-400 font-medium bg-gray-50 py-3 rounded-xl">
