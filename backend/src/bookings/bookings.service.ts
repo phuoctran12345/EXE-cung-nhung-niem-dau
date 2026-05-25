@@ -109,7 +109,7 @@ export class BookingsService {
       }
     }, 30 * 60 * 1000);
 
-    const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
+    const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'https://travel-match-jade.vercel.app';
 
     if (totalPrice <= 0) {
       return this.completeFreeBooking(orderCode, frontendUrl);

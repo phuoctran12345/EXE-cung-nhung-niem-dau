@@ -34,7 +34,7 @@ export default function OwnerDashboard() {
       try {
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4001/api";
         // Lấy danh sách toàn bộ các booking thuộc sở hữu của Đối tác này
-        const resBookings = await fetch(`${apiUrl}/bookings/owner/all`, {
+        const resBookings = await fetch(`${apiUrl}/bookings/owner/all-bookings`, {
           headers: { "Authorization": `Bearer ${token}` }
         });
         const bookings = await resBookings.json();
