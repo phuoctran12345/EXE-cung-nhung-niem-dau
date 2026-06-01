@@ -8,6 +8,13 @@ import { Clock, CheckCircle, Calendar, Robot, Sparkle, X } from "@phosphor-icons
 import { getActivitiesByDestinationId, Activity, formatVND } from "../data/mockData";
 import { recommendTour, chatTour } from "../services/ai.service";
 
+const PRIVATE_TOUR_NOTES = [
+  "Lịch trình private tour là đề xuất theo nhu cầu của bạn, có thể được điều chỉnh nhẹ theo điều kiện thực tế.",
+  "Nếu bạn có yêu cầu đặc biệt (ăn chay, không ăn cay, trẻ nhỏ, người lớn tuổi), vui lòng ghi rõ trước khi thanh toán.",
+  "Giá hiển thị là tạm tính theo lựa chọn hiện tại; một số dịch vụ phát sinh sẽ được xác nhận thêm khi chốt tour.",
+  "Sau khi thanh toán thành công, bộ phận điều hành sẽ liên hệ để xác nhận lịch trình chi tiết.",
+];
+
 type StepperProps = {
   activeStep: number; // bước hiện tại (1‑4)
   onStepClick?: (step: number) => void;
@@ -1020,6 +1027,19 @@ export function Summary({
           <div className="flex items-center justify-between mb-6">
             <span className="font-bold text-slate-500 text-[12px] tracking-wider uppercase">Total</span>
             <span className="font-extrabold text-[#38BDF8] text-[22px]">{formatVND(totalPriceUSD)}</span>
+          </div>
+
+          <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+            <p className="mb-2 text-[12px] font-extrabold uppercase tracking-wide text-amber-700">
+              Lưu ý khi đặt Private Tour
+            </p>
+            <ul className="space-y-1.5">
+              {PRIVATE_TOUR_NOTES.map((note) => (
+                <li key={note} className="text-[12px] leading-relaxed text-amber-800">
+                  - {note}
+                </li>
+              ))}
+            </ul>
           </div>
 
           <button
