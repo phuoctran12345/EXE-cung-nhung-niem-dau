@@ -70,6 +70,13 @@ export default function StayRangePicker({
 
   // Hàm render giao diện của một tháng đơn bên trong lịch kép
   const renderCalendarMonth = (baseDate: Date) => {
+    const today = new Date();
+    const minSelectableDate = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate(),
+    );
+
     const year = baseDate.getFullYear();
     const month = baseDate.getMonth();
     const firstDay = new Date(year, month, 1).getDay();
@@ -94,6 +101,9 @@ export default function StayRangePicker({
 
     // Xử lý khi người dùng chọn một ô ngày cụ thể
     const handleDateClick = (d: Date) => {
+      // Không cho chọn ngày trong quá khứ
+      if (d < minSelectableDate) return;
+
       let newStart = startDate;
       let newEnd = endDate;
 
@@ -150,6 +160,7 @@ export default function StayRangePicker({
             const start = isStart(d);
             const end = isEnd(d);
             const isToday = d.toDateString() === new Date().toDateString();
+            const isPast = d < minSelectableDate;
 
             let bgClass = "";
             // Màu nền vùng khoảng giữa
@@ -169,10 +180,10 @@ export default function StayRangePicker({
               <div
                 key={i}
                 onClick={() => handleDateClick(d)}
-                className={`py-1 cursor-pointer relative ${bgClass}`}
+                className={`py-1 relative ${isPast ? "cursor-not-allowed opacity-40" : "cursor-pointer"} ${bgClass}`}
               >
                 <div className={`w-8 h-8 mx-auto flex items-center justify-center rounded-full transition-all
-                  ${start || end ? "bg-[#38BDF8] text-white font-bold shadow-md shadow-[#38BDF8]/20" : "hover:bg-gray-100 text-[#1E293B]"} 
+                  ${start || end ? "bg-[#38BDF8] text-white font-bold shadow-md shadow-[#38BDF8]/20" : `${isPast ? "text-gray-400" : "hover:bg-gray-100 text-[#1E293B]"}`} 
                   ${isToday && !start && !end ? "border border-[#38BDF8] text-[#38BDF8]" : ""}`
                 }>
                   {d.getDate()}

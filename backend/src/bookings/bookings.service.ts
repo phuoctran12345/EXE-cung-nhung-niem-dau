@@ -50,7 +50,12 @@ export class BookingsService {
     }
 
     const participants = bookingData.numberOfParticipants || 1;
-    const subtotal = Math.round(Number(tour.price) * participants);
+    const isPrivateTour =
+      (bookingData as { isPrivateTour?: boolean }).isPrivateTour === true ||
+      (bookingData as { bookingType?: string }).bookingType === 'private';
+    const subtotal = isPrivateTour
+      ? Math.round(Number(bookingData.totalPrice ?? 0))
+      : Math.round(Number(tour.price) * participants);
     const PAYOS_MIN_AMOUNT = 1000;
 
     let totalPrice = subtotal;
@@ -74,7 +79,7 @@ export class BookingsService {
       voucherCode = result.code;
     } else {
       totalPrice = Math.round(Number(bookingData.totalPrice ?? subtotal));
-      if (Math.abs(totalPrice - subtotal) > 1) {
+      if (!isPrivateTour && Math.abs(totalPrice - subtotal) > 1) {
         throw new BadRequestException(
           'Tổng tiền không khớp. Vui lòng nhấn "Áp dụng" mã voucher trước khi thanh toán.',
         );
@@ -99,6 +104,8 @@ export class BookingsService {
       voucherCode,
       voucherId: voucherId ? new Types.ObjectId(voucherId) : undefined,
       orderCode,
+      customerNotes: (bookingData as { customerNotes?: string }).customerNotes,
+      bookingType: isPrivateTour ? 'private' : 'standard',
     };
 
     this.pendingBookingsCache.set(orderCode, cachePayload);
@@ -217,6 +224,8 @@ export class BookingsService {
     };
     if (cachedData.voucherCode) bookingDoc.voucherCode = cachedData.voucherCode;
     if (cachedData.voucherId) bookingDoc.voucherId = cachedData.voucherId;
+    if (cachedData.customerNotes) bookingDoc.customerNotes = cachedData.customerNotes;
+    if (cachedData.bookingType) bookingDoc.bookingType = cachedData.bookingType;
 
     let savedBooking: Booking;
     try {
