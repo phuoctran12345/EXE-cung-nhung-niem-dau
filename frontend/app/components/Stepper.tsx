@@ -8,6 +8,13 @@ import { Clock, CheckCircle, Calendar, Robot, Sparkle, X } from "@phosphor-icons
 import { getActivitiesByDestinationId, Activity, formatVND } from "../data/mockData";
 import { recommendTour, chatTour } from "../services/ai.service";
 
+const PRIVATE_TOUR_NOTES = [
+  "Lịch trình private tour là đề xuất theo nhu cầu của bạn, có thể được điều chỉnh nhẹ theo điều kiện thực tế.",
+  "Nếu bạn có yêu cầu đặc biệt (ăn chay, không ăn cay, trẻ nhỏ, người lớn tuổi), vui lòng ghi rõ trước khi thanh toán.",
+  "Giá hiển thị là tạm tính theo lựa chọn hiện tại; một số dịch vụ phát sinh sẽ được xác nhận thêm khi chốt tour.",
+  "Sau khi thanh toán thành công, bộ phận điều hành sẽ liên hệ để xác nhận lịch trình chi tiết.",
+];
+
 type StepperProps = {
   activeStep: number; // bước hiện tại (1‑4)
   onStepClick?: (step: number) => void;
@@ -771,11 +778,12 @@ export function Summary({
   destinations: Destination[]; 
   durations: Record<string, { days: number; nights: number }>;
   scheduledActs: Record<string, Activity & { customDurationHours?: number }>;
-  onFinish: (data: { participants: number, totalPrice: number }) => void;
+  onFinish: (data: { participants: number, totalPrice: number, customerNotes?: string }) => void;
   startDate: Date | null;
 }) {
   const [adults, setAdults] = React.useState(2);
   const [children, setChildren] = React.useState(0);
+  const [customerNotes, setCustomerNotes] = React.useState("");
   const [activeTab, setActiveTab] = React.useState<'overview' | 'itinerary' | 'reviews' | 'policies'>('itinerary');
   const [activeDay, setActiveDay] = React.useState(1);
 
@@ -1022,11 +1030,41 @@ export function Summary({
             <span className="font-extrabold text-[#38BDF8] text-[22px]">{formatVND(totalPriceUSD)}</span>
           </div>
 
+          <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+            <p className="mb-2 text-[12px] font-extrabold uppercase tracking-wide text-amber-700">
+              Lưu ý khi đặt Private Tour
+            </p>
+            <ul className="space-y-1.5">
+              {PRIVATE_TOUR_NOTES.map((note) => (
+                <li key={note} className="text-[12px] leading-relaxed text-amber-800">
+                  - {note}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="mb-6 rounded-2xl border border-sky-200 bg-sky-50 p-4">
+            <label className="block text-[12px] font-extrabold uppercase tracking-wide text-sky-700 mb-2">
+              Yêu cầu riêng cho hướng dẫn viên (không bắt buộc)
+            </label>
+            <textarea
+              value={customerNotes}
+              onChange={(e) => setCustomerNotes(e.target.value)}
+              placeholder="VD: Mình dị ứng hải sản, không ăn cay, muốn đi xe đạp buổi sáng..."
+              rows={3}
+              className="w-full rounded-xl border border-sky-200 bg-white px-3 py-2 text-[13px] text-slate-700 outline-none focus:border-[#38BDF8] focus:ring-2 focus:ring-[#38BDF8]/20"
+            />
+            <p className="mt-1 text-[11px] text-slate-500">
+              Lưu ý này sẽ được gửi cho phía tour để chuẩn bị tốt hơn cho bạn.
+            </p>
+          </div>
+
           <button
             className="w-full bg-gradient-to-r from-sky-400 to-sky-500 hover:from-sky-500 hover:to-sky-600 text-white font-bold py-3.5 rounded-xl transition-all shadow-[0_4px_14px_rgba(56,189,248,0.25)] text-[14px] mb-3 hover:scale-[1.01]"
             onClick={() => onFinish({ 
               participants: adults + children, 
-              totalPrice: totalPriceUSD 
+              totalPrice: totalPriceUSD,
+              customerNotes: customerNotes.trim() || undefined,
             })}
           >
             CONFIRM BOOKING

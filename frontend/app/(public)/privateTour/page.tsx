@@ -95,42 +95,76 @@ export default function PrivateTourPage() {
   };
 
   // Xử lý khi người dùng click vào một destination
+  // Click lại cùng địa điểm sẽ bỏ chọn (toggle)
   const handleSelectDestination = (dest: Destination) => {
-    if (!selectedDestinations.find((d) => d.id === dest.id)) {
-      const newList = [...selectedDestinations, dest];
+    const isAlreadySelected = selectedDestinations.some((d) => d.id === dest.id);
+
+    if (isAlreadySelected) {
+      const newList = selectedDestinations.filter((d) => d.id !== dest.id);
       setSelectedDestinations(newList);
-      
+
       const newMap = redistributeDurations(newList, startDate, endDate);
       setDurationMap(newMap);
 
-      // Fetch hoạt động của địa điểm vừa chọn
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4001/api";
-      fetch(`${apiUrl}/tours/destinations/${dest.id}/activities`)
-        .then(res => res.json())
-        .then(data => {
-          const mappedActs = data.map((a: any) => ({
-            id: a._id,
-            destinationId: a.destinationId,
-            name: a.name,
-            address: a.address,
-            price: a.price,
-            image: a.image,
-            durationHours: a.durationHours,
-            category: a.category
-          }));
-          
-          setAllActivities(prev => {
-            const existingIds = new Set(prev.map(act => act.id));
-            const newActs = mappedActs.filter((act: any) => !existingIds.has(act.id));
-            return [...prev, ...newActs];
-          });
-          
-          // Tự động chọn tất cả hoạt động mới
-          setSelectedActivityIds(prev => [...prev, ...mappedActs.map((a: any) => a.id)]);
-        })
-        .catch(err => console.error("Lỗi fetch activities:", err));
+      // Bỏ toàn bộ activity thuộc destination vừa bỏ chọn
+      const removedActivityIds = allActivities
+        .filter((act) => act.destinationId === dest.id)
+        .map((act) => act.id);
+      const removedSet = new Set(removedActivityIds);
 
+      setSelectedActivityIds((prev) => prev.filter((id) => !removedSet.has(id)));
+      setAllActivities((prev) => prev.filter((act) => act.destinationId !== dest.id));
+
+      // Dọn lịch trình đã xếp cho các activity bị bỏ
+      setScheduledActs((prev) => {
+        const next: Record<string, Activity & { customDurationHours?: number }> = {};
+        Object.entries(prev).forEach(([slot, act]) => {
+          if (!removedSet.has(act.id)) {
+            next[slot] = act;
+          }
+        });
+        return next;
+      });
+
+      // Nếu filter city đang trỏ vào destination đã bỏ thì reset về all
+      if (activityCityFilter === dest.id) {
+        setActivityCityFilter("all");
+      }
+      return;
     }
+
+    const newList = [...selectedDestinations, dest];
+    setSelectedDestinations(newList);
+    
+    const newMap = redistributeDurations(newList, startDate, endDate);
+    setDurationMap(newMap);
+
+    // Fetch hoạt động của địa điểm vừa chọn
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4001/api";
+    fetch(`${apiUrl}/tours/destinations/${dest.id}/activities`)
+      .then(res => res.json())
+      .then(data => {
+        const mappedActs = data.map((a: any) => ({
+          id: a._id,
+          destinationId: a.destinationId,
+          name: a.name,
+          address: a.address,
+          price: a.price,
+          image: a.image,
+          durationHours: a.durationHours,
+          category: a.category
+        }));
+        
+        setAllActivities(prev => {
+          const existingIds = new Set(prev.map(act => act.id));
+          const newActs = mappedActs.filter((act: any) => !existingIds.has(act.id));
+          return [...prev, ...newActs];
+        });
+        
+        // Tự động chọn tất cả hoạt động mới
+        setSelectedActivityIds(prev => [...prev, ...mappedActs.map((a: any) => a.id)]);
+      })
+      .catch(err => console.error("Lỗi fetch activities:", err));
   };
 
   // Xử lý thay đổi thời gian cho một địa điểm cụ thể
@@ -521,7 +555,10 @@ export default function PrivateTourPage() {
                     body: JSON.stringify({
                       tourId: "6a097c4a08d85b9c3c573e18", // Dummy tour ID cho Private Tour
                       numberOfParticipants: data.participants,
-                      totalPrice: totalPriceVND
+                      totalPrice: totalPriceVND,
+                      customerNotes: data.customerNotes,
+                      isPrivateTour: true,
+                      bookingType: "private",
                     })
                   });
 
