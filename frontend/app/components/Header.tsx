@@ -55,6 +55,13 @@ export default function Header() {
     setAuth({ status: "ready", user: readStoredUser() });
   }, []);
 
+  // Lắng nghe event mở popup login từ các component khác
+  useEffect(() => {
+    const handleOpenLogin = () => setIsLoginOpen(true);
+    window.addEventListener("open-login-modal", handleOpenLogin);
+    return () => window.removeEventListener("open-login-modal", handleOpenLogin);
+  }, []);
+
   // Đóng dropdown khi click ra ngoài
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {

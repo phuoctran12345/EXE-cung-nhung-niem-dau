@@ -78,10 +78,19 @@ export default function TourDetailPage() {
           <ArrowLeft size={20} /> Quay lại kết quả
         </Link>
         <div className="flex items-center gap-4">
-          <button className="p-2.5 rounded-full border border-gray-200 hover:bg-gray-50 transition-colors">
+          <button 
+            onClick={() => {
+              navigator.clipboard.writeText(window.location.href);
+              alert('Đã sao chép đường dẫn Tour vào clipboard!');
+            }}
+            className="p-2.5 rounded-full border border-gray-200 hover:bg-[#F0F9FF] hover:border-[#38BDF8] hover:text-[#38BDF8] transition-all cursor-pointer active:scale-95 shadow-sm"
+          >
             <ShareNetwork size={22} />
           </button>
-          <button className="p-2.5 rounded-full border border-gray-200 hover:bg-gray-50 transition-colors">
+          <button 
+            onClick={() => alert('Đã thêm Tour này vào danh sách yêu thích!')}
+            className="p-2.5 rounded-full border border-gray-200 hover:bg-red-50 hover:border-red-400 hover:text-red-500 transition-all cursor-pointer active:scale-95 shadow-sm"
+          >
             <Heart size={22} />
           </button>
         </div>

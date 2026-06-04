@@ -111,7 +111,9 @@ export default function BookingForm({ isOpen, onClose, tour, participants: initi
   const handleBooking = async () => {
     const token = localStorage.getItem("token");
     if (!token) {
-      setError("Vui lòng đăng nhập để thực hiện đặt tour.");
+      // Yêu cầu: khi người dùng chưa có phân quyền thì hãy redirect về trang đăng nhập / đăng kí
+      onClose(); // Đóng form booking hiện tại
+      window.dispatchEvent(new Event("open-login-modal")); // Mở popup đăng nhập
       return;
     }
 
@@ -155,6 +157,12 @@ export default function BookingForm({ isOpen, onClose, tour, participants: initi
 
       if (!res.ok) {
         setLoading(false);
+        // Xử lý lỗi 401 Unauthorized từ server (token hết hạn hoặc không hợp lệ)
+        if (res.status === 401) {
+          onClose();
+          window.dispatchEvent(new Event("open-login-modal"));
+          return;
+        }
         setError(getErrorMessage(result, "Không thể hoàn tất đặt tour."));
         return;
       }

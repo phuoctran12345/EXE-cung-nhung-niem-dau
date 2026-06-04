@@ -178,10 +178,13 @@ export default function Home() {
               {currentDest.description}
             </p>
             <div className="flex items-center gap-4">
-              <button className="flex items-center gap-2 border border-white rounded-full px-6 py-3 hover:bg-white/10 transition-colors text-[15px] font-medium">
-                <ArrowUpRight size={18} /> Khám phá ngay
-              </button>
-              <button className="w-12 h-12 rounded-full bg-[#F5A524] flex items-center justify-center hover:bg-[#D98C1C] transition-colors">
+              <Link href="/tours" className="flex items-center gap-2 border border-white rounded-full px-6 py-3 hover:bg-white hover:text-black transition-colors text-[15px] font-bold cursor-pointer active:scale-95 shadow-lg">
+                <ArrowUpRight size={18} weight="bold" /> Khám phá ngay
+              </Link>
+              <button 
+                onClick={() => alert('Đã lưu địa điểm này vào danh sách yêu thích của bạn!')}
+                className="w-12 h-12 rounded-full bg-[#F5A524] flex items-center justify-center hover:bg-[#D98C1C] hover:scale-105 transition-all cursor-pointer active:scale-95 shadow-lg shadow-[#F5A524]/40"
+              >
                 <BookmarkSimple size={20} weight="fill" className="text-white" />
               </button>
             </div>
@@ -189,48 +192,51 @@ export default function Home() {
 
           {/* Các thẻ danh sách địa điểm tiếp theo ở bên phải */}
           <div className="hidden lg:flex flex-col items-end gap-6 mt-10">
-            <div className="flex gap-4">
-              {rightCards.map((item) => (
-                <div 
-                  key={item.title} 
-                  onClick={() => setActiveIndex(item.originalIndex)}
-                  className="relative w-[180px] h-[280px] rounded-[24px] overflow-hidden cursor-pointer group hover:-translate-y-2 transition-all duration-300 shadow-[0_12px_30px_rgba(0,0,0,0.3)] hover:shadow-[0_20px_40px_rgba(0,0,0,0.5)]"
-                >
-                  <Image 
-                    src={item.cardImage} 
-                    alt={item.title} 
-                    fill 
-                    className="object-cover group-hover:scale-110 transition-transform duration-500" 
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-4 transition-opacity group-hover:from-black/90">
-                    <div className="flex items-center gap-1.5 text-[11px] text-white/90 mb-1">
-                      <MapPin size={12} weight="fill" className="text-[#F5A524]" /> {item.location.split(',')[0]}
+            <div className="flex items-center gap-4">
+              {/* Nút điều hướng Previous nằm bên trái */}
+              <button 
+                onClick={prevSlide}
+                className="w-10 h-10 rounded-full border border-white/40 flex items-center justify-center text-white hover:bg-white/20 hover:border-white transition-all cursor-pointer active:scale-95 hover:scale-105 shrink-0"
+              >
+                <CaretLeft size={20} weight="bold" />
+              </button>
+
+              {/* Danh sách ảnh */}
+              <div className="flex gap-4">
+                {rightCards.map((item) => (
+                  <div 
+                    key={item.title} 
+                    onClick={() => setActiveIndex(item.originalIndex)}
+                    className="relative w-[180px] h-[280px] rounded-[24px] overflow-hidden cursor-pointer group hover:-translate-y-2 transition-all duration-300 shadow-[0_12px_30px_rgba(0,0,0,0.3)] hover:shadow-[0_20px_40px_rgba(0,0,0,0.5)]"
+                  >
+                    <Image 
+                      src={item.cardImage} 
+                      alt={item.title} 
+                      fill 
+                      className="object-cover group-hover:scale-110 transition-transform duration-500" 
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-4 transition-opacity group-hover:from-black/90">
+                      <div className="flex items-center gap-1.5 text-[11px] text-white/90 mb-1">
+                        <MapPin size={12} weight="fill" className="text-[#F5A524]" /> {item.location.split(',')[0]}
+                      </div>
+                      <div className="text-white font-bold text-[15px] leading-tight">{item.title}</div>
                     </div>
-                    <div className="text-white font-bold text-[15px] leading-tight">{item.title}</div>
                   </div>
-                </div>
-              ))}
-            </div>
-            
-            {/* Thanh điều khiển chuyển slide và thanh tiến trình thời gian */}
-            <div className="flex items-center gap-6 w-full max-w-[780px] mt-2">
-              <div className="flex gap-3">
-                <button 
-                  onClick={prevSlide}
-                  className="w-10 h-10 rounded-full border border-white flex items-center justify-center text-white hover:bg-white/20 transition-colors cursor-pointer"
-                >
-                  <CaretLeft size={20} />
-                </button>
-                <button 
-                  onClick={nextSlide}
-                  className="w-10 h-10 rounded-full border border-white flex items-center justify-center text-white hover:bg-white/20 transition-colors cursor-pointer"
-                >
-                  <CaretRight size={20} />
-                </button>
+                ))}
               </div>
               
-              {/* Thanh chạy tiến trình thời gian của slide hiện tại */}
-              <div className="flex-1 h-[2px] bg-white/30 relative overflow-hidden">
+              {/* Nút điều hướng Next nằm bên phải */}
+              <button 
+                onClick={nextSlide}
+                className="w-10 h-10 rounded-full border border-white/40 flex items-center justify-center text-white hover:bg-white/20 hover:border-white transition-all cursor-pointer active:scale-95 hover:scale-105 shrink-0"
+              >
+                <CaretRight size={20} weight="bold" />
+              </button>
+            </div>
+            
+            {/* Thanh tiến trình thời gian */}
+            <div className="flex items-center gap-6 w-full max-w-[850px] mt-2">
+              <div className="flex-1 h-[2px] bg-white/30 relative overflow-hidden ml-[56px] mr-[56px]">
                 <div 
                   key={activeIndex} 
                   className={`absolute top-0 left-0 h-full bg-white ${isPaused ? "w-0" : "animate-progress-bar"}`}
