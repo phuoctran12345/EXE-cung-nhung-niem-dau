@@ -10,6 +10,8 @@ function SuccessContent() {
   const router = useRouter();
   const orderCode = searchParams.get("orderCode");
   const isFreeOrder = searchParams.get("free") === "1";
+  const paymentType = searchParams.get("type");
+  const paidByWallet = searchParams.get("wallet") === "1";
 
   const [isVerifying, setIsVerifying] = useState(true);
   const [countdown, setCountdown] = useState(5);
@@ -21,9 +23,10 @@ function SuccessContent() {
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4001/api";
         await new Promise(resolve => setTimeout(resolve, isFreeOrder ? 800 : 2000));
 
-        const res = await fetch(`${apiUrl}/bookings/confirm-payment?orderCode=${orderCode}`, {
-          method: "POST"
-        });
+        const confirmUrl = paymentType === "private"
+          ? `${apiUrl}/private-tour-requests/confirm-payment?orderCode=${orderCode}`
+          : `${apiUrl}/bookings/confirm-payment?orderCode=${orderCode}`;
+        const res = await fetch(confirmUrl, { method: "POST" });
         const data = await res.json();
         console.log(">>> [FRONTEND] Đã xác nhận đơn hàng:", data);
         setIsVerifying(false);
@@ -34,7 +37,7 @@ function SuccessContent() {
     };
 
     confirmPayment();
-  }, [orderCode]);
+  }, [orderCode, isFreeOrder, paymentType]);
 
   // Tự động đếm ngược và điều hướng về trang cá nhân sau khi thành công
   useEffect(() => {
@@ -43,7 +46,7 @@ function SuccessContent() {
         setCountdown((prev) => {
           if (prev <= 1) {
             clearInterval(timer);
-            router.push("/");
+            router.push(paymentType === "private" ? "/my-private-tours" : "/");
             return 0;
           }
           return prev - 1;
@@ -82,7 +85,11 @@ function SuccessContent() {
         </div>
 
         <h1 className="text-[36px] font-black text-[#1A2434] mb-4">
-          {isFreeOrder ? "Đặt tour thành công!" : "Thanh toán thành công!"}
+          {paidByWallet
+            ? "Thanh toán bằng ví thành công!"
+            : isFreeOrder
+              ? "Đặt tour thành công!"
+              : "Thanh toán thành công!"}
         </h1>
         <p className="text-gray-500 font-medium text-[17px] mb-10 leading-relaxed">
           {isFreeOrder ? (

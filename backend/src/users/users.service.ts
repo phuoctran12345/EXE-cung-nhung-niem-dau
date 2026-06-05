@@ -2,10 +2,14 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserDocument } from './schemas/user.schema';
+import { WalletsService } from '../wallets/wallets.service';
 
 @Injectable()
 export class UsersService {
-  constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
+  constructor(
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
+    private walletsService: WalletsService,
+  ) {}
 
   // Lấy danh sách tất cả người dùng
   async findAll(): Promise<User[]> {
@@ -20,7 +24,9 @@ export class UsersService {
   // Tạo người dùng mới
   async create(userData: Partial<User>): Promise<UserDocument> {
     const newUser = new this.userModel(userData);
-    return newUser.save();
+    const saved = await newUser.save();
+    await this.walletsService.ensureUserWallet(saved._id);
+    return saved;
   }
 
   // Cập nhật trạng thái tài khoản (Khóa/Mở khóa)

@@ -19,34 +19,34 @@ export default function OwnerDashboard() {
     totalBookings: 0,
     activeTours: 0,
     totalRevenue: 0,
+    walletBalance: 0,
+    privateTourRevenue: 0,
     averageRating: 4.8
   });
-  const [recentBookings, setRecentBookings] = useState<any[]>([]);
+  const [recentEarnings, setRecentEarnings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchOwnerData = async () => {
-      const userStr = localStorage.getItem("user");
       const token = localStorage.getItem("token");
-      if (!userStr || !token) return;
-      
-      const user = JSON.parse(userStr);
+      if (!token) return;
+
       try {
         const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4001/api";
-        // Lấy danh sách toàn bộ các booking thuộc sở hữu của Đối tác này
-        const resBookings = await fetch(`${apiUrl}/bookings/owner/all-bookings`, {
-          headers: { "Authorization": `Bearer ${token}` }
+        const res = await fetch(`${apiUrl}/wallets/owner/dashboard-stats`, {
+          headers: { Authorization: `Bearer ${token}` },
         });
-        const bookings = await resBookings.json();
-        
-        if (Array.isArray(bookings)) {
-          setRecentBookings(bookings.slice(0, 5));
+        const data = await res.json();
+
+        if (res.ok && data) {
+          setRecentEarnings(data.recentEarnings || []);
           setStats({
-            totalBookings: bookings.length,
-            activeTours: 6, // Số lượng tour hoạt động
-            // Tính toán doanh thu tổng cộng dựa trên dữ liệu VNĐ trực tiếp
-            totalRevenue: bookings.reduce((acc: number, b: any) => acc + (b.totalPrice || 0), 0),
-            averageRating: 4.9
+            totalBookings: data.totalBookings ?? 0,
+            activeTours: data.activeTours ?? 0,
+            totalRevenue: data.totalRevenue ?? 0,
+            walletBalance: data.walletBalance ?? 0,
+            privateTourRevenue: data.privateTourRevenue ?? 0,
+            averageRating: 4.9,
           });
         }
       } catch (error) {
@@ -95,9 +95,9 @@ export default function OwnerDashboard() {
         />
         <OwnerStatCard 
           icon={<CurrencyCircleDollar size={32} weight="fill" className="text-amber-500" />} 
-          label="Doanh thu (VNĐ)" 
+          label="Tổng doanh thu (VNĐ)" 
           value={stats.totalRevenue.toLocaleString("vi-VN")} 
-          trend="Thanh toán qua PayOS"
+          trend={`Ví: ${stats.walletBalance.toLocaleString("vi-VN")} · Tour CN: ${stats.privateTourRevenue.toLocaleString("vi-VN")}`}
           color="bg-amber-50"
         />
         <OwnerStatCard 
@@ -118,25 +118,26 @@ export default function OwnerDashboard() {
           </div>
           
           <div className="space-y-6">
-            {recentBookings.length > 0 ? recentBookings.map((booking) => (
-              <div key={booking._id} className="flex items-center justify-between p-5 rounded-3xl hover:bg-gray-50 transition-all border border-transparent hover:border-gray-100 group">
+            {recentEarnings.length > 0 ? recentEarnings.map((item) => (
+              <div key={item.id} className="flex items-center justify-between p-5 rounded-3xl hover:bg-gray-50 transition-all border border-transparent hover:border-gray-100 group">
                 <div className="flex items-center gap-5">
                   <div className="w-14 h-14 rounded-2xl bg-[#F8F9FA] flex items-center justify-center text-2xl shadow-inner">
-                    👤
+                    {item.type === "private_tour" ? "🗺️" : "👤"}
                   </div>
                   <div className="flex flex-col">
                     <div className="font-black text-[#1A2434] group-hover:text-[#38BDF8] transition-colors">
-                      {booking.customerId?.name || "Khách hàng ẩn danh"}
+                      {item.customerName || (item.type === "private_tour" ? "Tour cá nhân" : "Khách hàng")}
                     </div>
                     <div className="text-[13px] text-gray-400 font-bold uppercase tracking-tight line-clamp-1">
-                      {booking.tourId?.title || "Sản phẩm du lịch"}
+                      {item.description || "Doanh thu"}
                     </div>
                   </div>
                 </div>
                 <div className="text-right">
-                  {/* Hiển thị giá VNĐ trực tiếp cho đối tác */}
-                  <div className="font-black text-[#1A2434]">{booking.totalPrice?.toLocaleString("vi-VN")} VNĐ</div>
-                  <div className="text-[12px] text-green-500 font-bold uppercase tracking-widest mt-1">Đã thanh toán</div>
+                  <div className="font-black text-[#1A2434]">+{item.amount?.toLocaleString("vi-VN")} VNĐ</div>
+                  <div className="text-[12px] text-green-500 font-bold uppercase tracking-widest mt-1">
+                    {item.type === "private_tour" ? "90% tour CN" : "Tour thường"}
+                  </div>
                 </div>
               </div>
             )) : (

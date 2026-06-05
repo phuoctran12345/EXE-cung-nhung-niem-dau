@@ -48,7 +48,10 @@ export default function ProfileDropdown({ user, onLogout, onClose }: ProfileDrop
         <div className="flex flex-col overflow-hidden">
           <span className="font-medium text-[16px] truncate">{user?.name || 'Người dùng'}</span>
           <span className="text-[14px] text-[#AAAAAA] truncate">{user.email}</span>
-          <button className="text-[#3EA6FF] text-[14px] mt-2 text-left hover:text-[#65B8FF] transition-colors">
+          <button
+            onClick={() => { window.location.href = '/profile'; onClose(); }}
+            className="text-[#3EA6FF] text-[14px] mt-2 text-left hover:text-[#65B8FF] transition-colors"
+          >
             Xem hồ sơ của bạn
           </button>
         </div>
@@ -75,6 +78,13 @@ export default function ProfileDropdown({ user, onLogout, onClose }: ProfileDrop
           label={user.role === 'tour_owner' ? 'Quản lý kinh doanh' : 'Chuyến đi của tôi'} 
           onClick={() => window.location.href = user.role === 'tour_owner' ? '/owner/dashboard' : '/my-trips'}
         />
+        {(!user.role || user.role === 'customer') && (
+          <MenuItem
+            icon={<Globe size={22} />}
+            label="Tour cá nhân của tôi"
+            onClick={() => window.location.href = '/my-private-tours'}
+          />
+        )}
         {user.role === 'tour_owner' && (
           <MenuItem 
             icon={<ArrowsLeftRight size={22} />} 

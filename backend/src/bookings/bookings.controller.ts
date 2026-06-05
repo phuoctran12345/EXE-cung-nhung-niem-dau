@@ -1,12 +1,16 @@
 import { Controller, Get, Post, Patch, Body, Param, UseGuards, Request, Query } from '@nestjs/common';
 import { BookingsService } from './bookings.service';
+import { PrivateTourRequestsService } from '../private-tour-requests/private-tour-requests.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 
 @Controller('bookings')
 export class BookingsController {
-  constructor(private readonly bookingsService: BookingsService) {}
+  constructor(
+    private readonly bookingsService: BookingsService,
+    private readonly privateTourRequestsService: PrivateTourRequestsService,
+  ) {}
 
   // Đặt tour mới (Khách hàng) - Lúc này chỉ lưu vào Cache, chưa lưu vào DB
   @Post()
@@ -52,6 +56,26 @@ export class BookingsController {
     return this.bookingsService.findByOwner(req.user.id);
   }
 
+  // Lấy tất cả đơn tour cá nhân đã thanh toán (Chủ tour xem và chọn nhận/từ chối)
+  @Get('owner/private-tours')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('tour_owner')
+  async findPrivateTours() {
+    return this.bookingsService.findPrivateToursForOwners();
+  }
+
+  // Chủ tour nhận hoặc từ chối tour cá nhân
+  @Patch(':id/owner-response')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('tour_owner')
+  async respondToPrivateTour(
+    @Param('id') id: string,
+    @Body('action') action: 'accept' | 'reject',
+    @Request() req: any,
+  ) {
+    return this.bookingsService.respondToPrivateTour(id, req.user.id, action);
+  }
+
   // Lấy TOÀN BỘ danh sách đơn hàng dành cho Admin
   @Get('admin/all-bookings')
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -64,6 +88,11 @@ export class BookingsController {
   @Post('webhook')
   async handlePayOSWebhook(@Body() webhookData: any) {
     console.log('>>> [BACKEND] Nhận Webhook từ PayOS:', webhookData);
+    try {
+      await this.privateTourRequestsService.handleWebhook(webhookData);
+    } catch {
+      // Không phải đơn tour cá nhân — xử lý tiếp như booking thường
+    }
     return this.bookingsService.handleWebhook(webhookData);
   }
 }

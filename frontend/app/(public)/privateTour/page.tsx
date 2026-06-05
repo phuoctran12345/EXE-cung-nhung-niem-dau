@@ -538,37 +538,56 @@ export default function PrivateTourPage() {
                   return;
                 }
 
-                // Quy đổi sang VND nếu cần (giống BookingForm)
                 const totalPriceVND = data.totalPrice < 1000 ? data.totalPrice * 25000 : data.totalPrice;
+
+                const privateTourDetails = {
+                  destinations: selectedDestinations.map((d) => ({
+                    id: d.id,
+                    name: d.name,
+                    days: durationMap[d.id]?.days ?? 1,
+                    nights: durationMap[d.id]?.nights ?? 0,
+                  })),
+                  startDate: startDate?.toISOString() ?? null,
+                  endDate: endDate?.toISOString() ?? null,
+                  activities: Object.entries(scheduledActs).map(([slot, act]) => {
+                    const [day, time] = slot.split("-");
+                    return {
+                      name: act.name,
+                      address: act.address,
+                      price: act.price,
+                      day: Number(day),
+                      time,
+                    };
+                  }),
+                  durations: durationMap,
+                };
 
                 try {
                   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4001/api";
-                  const res = await fetch(`${apiUrl}/bookings`, {
+                  const res = await fetch(`${apiUrl}/private-tour-requests`, {
                     method: "POST",
                     headers: {
                       "Content-Type": "application/json",
                       "Authorization": `Bearer ${token}`
                     },
                     body: JSON.stringify({
-                      tourId: "6a097c4a08d85b9c3c573e18", // Dummy tour ID cho Private Tour
+                      estimatedPrice: totalPriceVND,
                       numberOfParticipants: data.participants,
-                      totalPrice: totalPriceVND,
                       customerNotes: data.customerNotes,
-                      isPrivateTour: true,
-                      bookingType: "private",
+                      privateTourDetails,
                     })
                   });
 
                   const result = await res.json();
                   
-                  if (result.success && result.data.paymentUrl) {
-                    // Chuyển hướng đến cổng thanh toán PayOS
-                    window.location.href = result.data.paymentUrl;
+                  if (result.success) {
+                    alert("Đã gửi yêu cầu tour cá nhân! Các chủ tour sẽ báo giá cho bạn. Xem tại mục 'Tour cá nhân của tôi'.");
+                    window.location.href = "/my-private-tours";
                   } else {
-                    alert(result.message || "Không thể tạo link thanh toán.");
+                    alert(result.message || "Không thể gửi yêu cầu.");
                   }
                 } catch (error) {
-                  console.error("Booking error:", error);
+                  console.error("Request error:", error);
                   alert("Lỗi kết nối. Vui lòng thử lại sau.");
                 }
               }}

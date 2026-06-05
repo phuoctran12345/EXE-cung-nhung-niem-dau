@@ -17,8 +17,11 @@ export default function AdminDashboard() {
     totalUsers: 0,
     totalTours: 0,
     pendingTours: 0,
-    totalRevenue: 0
+    totalRevenue: 0,
+    totalGmv: 0,
+    platformBalance: 0,
   });
+  const [recentFees, setRecentFees] = useState<any[]>([]);
   const [recentTours, setRecentTours] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -42,25 +45,23 @@ export default function AdminDashboard() {
         });
         const users = await resUsers.json();
 
-        // 3. Lấy danh sách toàn bộ giao dịch để tính doanh thu thực tế
-        const resBookings = await fetch(`${apiUrl}/bookings/admin/all-bookings`, {
-          headers: { "Authorization": `Bearer ${token}` }
+        const resWalletStats = await fetch(`${apiUrl}/wallets/admin/dashboard-stats`, {
+          headers: { Authorization: `Bearer ${token}` },
         });
-        const bookingsData = await resBookings.json();
-        
-        // Tính tổng doanh thu bằng hàm reduce (Kiến thức quan trọng cho phỏng vấn)
-        const totalRev = Array.isArray(bookingsData) 
-          ? bookingsData.reduce((sum: number, b: any) => sum + (b.totalPrice || 0), 0)
-          : 0;
+        const walletStats = resWalletStats.ok ? await resWalletStats.json() : {};
 
-        // Thống kê dữ liệu dựa trên phản hồi thực tế từ hệ thống
+        setStats({
+          totalUsers: Array.isArray(users) ? users.length : 0,
+          totalTours: Array.isArray(tours) ? tours.length : 0,
+          pendingTours: Array.isArray(tours)
+            ? tours.filter((t: any) => t.status === "pending").length
+            : 0,
+          totalRevenue: Number(walletStats.platformRevenue) || 0,
+          totalGmv: Number(walletStats.totalGmv) || 0,
+          platformBalance: Number(walletStats.platformBalance) || 0,
+        });
+        setRecentFees(Array.isArray(walletStats.recentPlatformFees) ? walletStats.recentPlatformFees : []);
         if (Array.isArray(tours)) {
-          setStats({
-            totalUsers: Array.isArray(users) ? users.length : 0,
-            totalTours: tours.length,
-            pendingTours: tours.filter((t: any) => t.status === 'pending').length,
-            totalRevenue: totalRev
-          });
           setRecentTours(tours.slice(0, 5));
         }
       } catch (error) {
@@ -71,6 +72,8 @@ export default function AdminDashboard() {
     };
     fetchDashboardData();
   }, []);
+
+  const formatVND = (n?: number) => (Number(n) || 0).toLocaleString("vi-VN");
 
   if (loading) return (
     <div className="flex items-center justify-center min-h-[400px]">
@@ -110,9 +113,9 @@ export default function AdminDashboard() {
         />
         <StatCard 
           icon={<CurrencyDollar size={32} weight="fill" className="text-purple-500" />} 
-          label="Tổng doanh thu (VNĐ)" 
-          value={stats.totalRevenue.toLocaleString("vi-VN") + " VNĐ"} 
-          trend="+5.4% tăng trưởng"
+          label="Phí sàn 10% (VNĐ)" 
+          value={formatVND(stats.totalRevenue)} 
+          trend={`GMV: ${formatVND(stats.totalGmv)} · Ví: ${formatVND(stats.platformBalance)}`}
           color="bg-purple-50"
         />
       </div>
@@ -166,7 +169,16 @@ export default function AdminDashboard() {
           <div className="space-y-8">
             <ActivityItem icon={<CheckCircle size={20} className="text-green-500" />} title="Sản phẩm du lịch mới được duyệt" time="2 phút trước" />
             <ActivityItem icon={<Users size={20} className="text-[#38BDF8]" />} title="Thành viên mới đăng ký hệ thống" time="15 phút trước" />
-            <ActivityItem icon={<TrendUp size={20} className="text-purple-500" />} title="Giao dịch mới: 4.950.000 VNĐ" time="1 giờ trước" />
+            {recentFees.length > 0 ? recentFees.slice(0, 3).map((fee) => (
+              <ActivityItem
+                key={fee.id}
+                icon={<TrendUp size={20} className="text-purple-500" />}
+                title={`Phí sàn +${fee.amount?.toLocaleString("vi-VN")} VNĐ`}
+                time={fee.createdAt ? new Date(fee.createdAt).toLocaleString("vi-VN") : "—"}
+              />
+            )) : (
+              <ActivityItem icon={<TrendUp size={20} className="text-purple-500" />} title="Chưa có phí sàn từ tour cá nhân" time="—" />
+            )}
             <ActivityItem icon={<Clock size={20} className="text-amber-500" />} title="Yêu cầu thanh toán từ Đối tác" time="3 giờ trước" />
           </div>
         </div>

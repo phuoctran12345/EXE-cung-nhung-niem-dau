@@ -11,6 +11,8 @@ import { UploadsModule } from './uploads/uploads.module';
 import { AiModule } from './ai/ai.module';
 import { VouchersModule } from './vouchers/vouchers.module';
 import { PartnerApplicationsModule } from './partner-applications/partner-applications.module';
+import { WalletsModule } from './wallets/wallets.module';
+import { PrivateTourRequestsModule } from './private-tour-requests/private-tour-requests.module';
 
 // Module chính của ứng dụng backend
 @Module({
@@ -36,6 +38,8 @@ import { PartnerApplicationsModule } from './partner-applications/partner-applic
     UploadsModule,
     AiModule,
     PartnerApplicationsModule,
+    WalletsModule,
+    PrivateTourRequestsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

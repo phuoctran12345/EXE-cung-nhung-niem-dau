@@ -53,6 +53,11 @@ export class BookingsService {
     const isPrivateTour =
       (bookingData as { isPrivateTour?: boolean }).isPrivateTour === true ||
       (bookingData as { bookingType?: string }).bookingType === 'private';
+    if (isPrivateTour) {
+      throw new BadRequestException(
+        'Tour cá nhân vui lòng gửi yêu cầu qua mục Tour Cá Nhân. Thanh toán chỉ thực hiện sau khi chấp nhận báo giá từ chủ tour.',
+      );
+    }
     const subtotal = isPrivateTour
       ? Math.round(Number(bookingData.totalPrice ?? 0))
       : Math.round(Number(tour.price) * participants);
@@ -106,6 +111,8 @@ export class BookingsService {
       orderCode,
       customerNotes: (bookingData as { customerNotes?: string }).customerNotes,
       bookingType: isPrivateTour ? 'private' : 'standard',
+      privateTourDetails: (bookingData as { privateTourDetails?: Record<string, unknown> }).privateTourDetails,
+      ownerStatus: isPrivateTour ? 'pending' : undefined,
     };
 
     this.pendingBookingsCache.set(orderCode, cachePayload);
@@ -226,6 +233,8 @@ export class BookingsService {
     if (cachedData.voucherId) bookingDoc.voucherId = cachedData.voucherId;
     if (cachedData.customerNotes) bookingDoc.customerNotes = cachedData.customerNotes;
     if (cachedData.bookingType) bookingDoc.bookingType = cachedData.bookingType;
+    if (cachedData.privateTourDetails) bookingDoc.privateTourDetails = cachedData.privateTourDetails;
+    if (cachedData.ownerStatus) bookingDoc.ownerStatus = cachedData.ownerStatus;
 
     let savedBooking: Booking;
     try {
@@ -299,6 +308,50 @@ export class BookingsService {
     const booking = await this.bookingModel.findById(id);
     if (!booking) throw new NotFoundException('Không tìm thấy đơn đặt tour');
     booking.status = 'cancelled';
+    return booking.save();
+  }
+
+  // Lấy tất cả đơn tour cá nhân đã thanh toán (dành cho chủ tour xem và nhận/từ chối)
+  async findPrivateToursForOwners(): Promise<Booking[]> {
+    return this.bookingModel
+      .find({ bookingType: 'private', status: 'paid' })
+      .populate('customerId')
+      .populate('assignedOwnerId', 'name email')
+      .populate('rejectedByOwnerId', 'name email')
+      .sort({ createdAt: -1 })
+      .exec();
+  }
+
+  // Chủ tour nhận hoặc từ chối đơn tour cá nhân
+  async respondToPrivateTour(
+    bookingId: string,
+    ownerId: string,
+    action: 'accept' | 'reject',
+  ): Promise<Booking> {
+    const booking = await this.bookingModel.findById(bookingId);
+    if (!booking) throw new NotFoundException('Không tìm thấy đơn đặt tour.');
+    if (booking.bookingType !== 'private') {
+      throw new BadRequestException('Đơn này không phải tour cá nhân.');
+    }
+    if (booking.status !== 'paid') {
+      throw new BadRequestException('Đơn chưa thanh toán hoặc đã bị hủy.');
+    }
+    if (booking.ownerStatus !== 'pending') {
+      throw new BadRequestException(
+        booking.ownerStatus === 'accepted'
+          ? 'Tour này đã được chủ tour khác nhận.'
+          : 'Tour này đã bị từ chối.',
+      );
+    }
+
+    if (action === 'accept') {
+      booking.ownerStatus = 'accepted';
+      booking.assignedOwnerId = new Types.ObjectId(ownerId);
+    } else {
+      booking.ownerStatus = 'rejected';
+      booking.rejectedByOwnerId = new Types.ObjectId(ownerId);
+    }
+
     return booking.save();
   }
 }

@@ -10,10 +10,10 @@ import { calcPrivateTourPrice } from "../utils/privateTourPricing";
 import { recommendTour, chatTour } from "../services/ai.service";
 
 const PRIVATE_TOUR_NOTES = [
-  "Lịch trình private tour là đề xuất theo nhu cầu của bạn, có thể được điều chỉnh nhẹ theo điều kiện thực tế.",
-  "Nếu bạn có yêu cầu đặc biệt (ăn chay, không ăn cay, trẻ nhỏ, người lớn tuổi), vui lòng ghi rõ trước khi thanh toán.",
-  "Giá hiển thị là tạm tính theo lựa chọn hiện tại; một số dịch vụ phát sinh sẽ được xác nhận thêm khi chốt tour.",
-  "Sau khi thanh toán thành công, bộ phận điều hành sẽ liên hệ để xác nhận lịch trình chi tiết.",
+  "Giá hiển thị chỉ là mức gợi ý — bạn không cần thanh toán ngay.",
+  "Yêu cầu sẽ được gửi đến các chủ tour, họ sẽ báo giá cụ thể cho bạn.",
+  "Bạn chọn báo giá phù hợp, sau đó mới thanh toán qua PayOS.",
+  "Sàn giữ 10% phí dịch vụ, 90% còn lại chuyển vào ví chủ tour.",
 ];
 
 type StepperProps = {
@@ -1101,7 +1101,7 @@ export function Summary({
               customerNotes: customerNotes.trim() || undefined,
             })}
           >
-            CONFIRM BOOKING
+            GỬI YÊU CẦU TOUR
           </button>
 
           <div className="flex gap-2">

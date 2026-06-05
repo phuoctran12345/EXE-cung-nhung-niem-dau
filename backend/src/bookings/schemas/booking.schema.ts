@@ -37,6 +37,24 @@ export class Booking {
 
   @Prop({ default: 1 })
   numberOfParticipants: number; // Số người tham gia
+
+  @Prop({ default: 'standard', enum: ['standard', 'private'] })
+  bookingType: string; // Loại đặt tour: thường hoặc tour cá nhân
+
+  @Prop()
+  customerNotes: string; // Ghi chú từ khách hàng (tour cá nhân)
+
+  @Prop({ type: Object })
+  privateTourDetails: Record<string, unknown>; // Chi tiết lịch trình tour cá nhân
+
+  @Prop({ default: 'pending', enum: ['pending', 'accepted', 'rejected'] })
+  ownerStatus: string; // Trạng thái chủ tour nhận/từ chối (chỉ tour cá nhân)
+
+  @Prop({ type: Types.ObjectId, ref: 'User' })
+  assignedOwnerId: Types.ObjectId; // Chủ tour đã nhận đơn tour cá nhân
+
+  @Prop({ type: Types.ObjectId, ref: 'User' })
+  rejectedByOwnerId: Types.ObjectId; // Chủ tour đã từ chối đơn tour cá nhân
 }
 
 export const BookingSchema = SchemaFactory.createForClass(Booking);
