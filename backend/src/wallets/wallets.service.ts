@@ -203,14 +203,30 @@ export class WalletsService implements OnModuleInit {
       .exec();
   }
 
-  async settlePrivateTourPayment(params: {
+  private async settleTourPayment(params: {
     ownerId: string;
     totalAmount: number;
-    requestId: string;
+    referenceType: 'booking' | 'private_tour_request';
+    referenceId: string;
     orderCode: number;
+    ownerDescription: string;
+    platformDescription: string;
   }): Promise<{ platformFee: number; ownerAmount: number }> {
-    const platformFee = Math.round(params.totalAmount * PLATFORM_FEE_RATE);
-    const ownerAmount = params.totalAmount - platformFee;
+    const total = Math.round(params.totalAmount);
+    if (!Number.isFinite(total) || total <= 0) {
+      return { platformFee: 0, ownerAmount: 0 };
+    }
+
+    const existing = await this.transactionModel
+      .findOne({ orderCode: params.orderCode, type: 'owner_credit' })
+      .exec();
+    if (existing) {
+      const platformFee = Math.round(total * PLATFORM_FEE_RATE);
+      return { platformFee, ownerAmount: total - platformFee };
+    }
+
+    const platformFee = Math.round(total * PLATFORM_FEE_RATE);
+    const ownerAmount = total - platformFee;
 
     const ownerWallet = await this.findOrCreateUserWallet(params.ownerId);
     const platformWallet = await this.getOrCreatePlatformWallet();
@@ -223,15 +239,17 @@ export class WalletsService implements OnModuleInit {
     platformWallet.totalEarned += platformFee;
     await platformWallet.save();
 
+    const refOid = new Types.ObjectId(params.referenceId);
+
     await this.transactionModel.create({
       walletId: ownerWallet._id,
       userId: new Types.ObjectId(params.ownerId),
       type: 'owner_credit',
       amount: ownerAmount,
       balanceAfter: ownerWallet.balance,
-      description: `Thanh toán tour cá nhân (90% sau phí sàn)`,
-      referenceType: 'private_tour_request',
-      referenceId: new Types.ObjectId(params.requestId),
+      description: params.ownerDescription,
+      referenceType: params.referenceType,
+      referenceId: refOid,
       orderCode: params.orderCode,
     });
 
@@ -240,13 +258,47 @@ export class WalletsService implements OnModuleInit {
       type: 'platform_fee',
       amount: platformFee,
       balanceAfter: platformWallet.balance,
-      description: `Phí sàn 10% tour cá nhân #${params.orderCode}`,
-      referenceType: 'private_tour_request',
-      referenceId: new Types.ObjectId(params.requestId),
+      description: params.platformDescription,
+      referenceType: params.referenceType,
+      referenceId: refOid,
       orderCode: params.orderCode,
     });
 
     return { platformFee, ownerAmount };
+  }
+
+  async settlePrivateTourPayment(params: {
+    ownerId: string;
+    totalAmount: number;
+    requestId: string;
+    orderCode: number;
+  }): Promise<{ platformFee: number; ownerAmount: number }> {
+    return this.settleTourPayment({
+      ownerId: params.ownerId,
+      totalAmount: params.totalAmount,
+      referenceType: 'private_tour_request',
+      referenceId: params.requestId,
+      orderCode: params.orderCode,
+      ownerDescription: 'Thanh toán tour cá nhân (90% sau phí sàn)',
+      platformDescription: `Phí sàn 10% tour cá nhân #${params.orderCode}`,
+    });
+  }
+
+  async settleStandardTourPayment(params: {
+    ownerId: string;
+    totalAmount: number;
+    bookingId: string;
+    orderCode: number;
+  }): Promise<{ platformFee: number; ownerAmount: number }> {
+    return this.settleTourPayment({
+      ownerId: params.ownerId,
+      totalAmount: params.totalAmount,
+      referenceType: 'booking',
+      referenceId: params.bookingId,
+      orderCode: params.orderCode,
+      ownerDescription: 'Thanh toán tour thường (90% sau phí sàn)',
+      platformDescription: `Phí sàn 10% tour thường #${params.orderCode}`,
+    });
   }
 
   async getPlatformStats(): Promise<{ balance: number; totalEarned: number }> {
@@ -254,7 +306,7 @@ export class WalletsService implements OnModuleInit {
     return { balance: wallet.balance, totalEarned: wallet.totalEarned };
   }
 
-  /** Doanh thu owner: 90% tour cá nhân (owner_credit) + tour thường đã thanh toán */
+  /** Doanh thu owner: 90% từ owner_credit (tour thường + tour cá nhân) */
   async getOwnerDashboardStats(ownerId: string) {
     const ownerOid = new Types.ObjectId(ownerId);
     const wallet = await this.findOrCreateUserWallet(ownerId);
@@ -263,7 +315,13 @@ export class WalletsService implements OnModuleInit {
       .find({ userId: ownerOid, type: 'owner_credit' })
       .sort({ createdAt: -1 })
       .exec();
-    const privateTourRevenue = ownerCredits.reduce((s, t) => s + t.amount, 0);
+
+    const privateTourRevenue = ownerCredits
+      .filter((t) => t.referenceType === 'private_tour_request')
+      .reduce((s, t) => s + t.amount, 0);
+    const standardTourRevenue = ownerCredits
+      .filter((t) => t.referenceType === 'booking')
+      .reduce((s, t) => s + t.amount, 0);
 
     const tours = await this.tourModel
       .find({
@@ -287,41 +345,67 @@ export class WalletsService implements OnModuleInit {
       .sort({ createdAt: -1 })
       .exec();
 
-    const standardTourRevenue = standardBookings.reduce(
-      (s, b) => s + (b.totalPrice || 0),
-      0,
-    );
-
     const privateTourPaid = await this.privateTourRequestModel
       .find({ acceptedOwnerId: ownerOid, status: 'paid' })
       .populate('customerId', 'name email')
       .sort({ createdAt: -1 })
       .exec();
 
-    const recentEarnings = [
-      ...ownerCredits.slice(0, 5).map((t) => ({
-        id: t._id,
-        type: 'private_tour',
-        amount: t.amount,
-        description: t.description,
-        createdAt: (t as any).createdAt,
-        orderCode: t.orderCode,
-      })),
-      ...standardBookings.slice(0, 5).map((b) => ({
-        id: b._id,
-        type: 'standard_tour',
-        amount: b.totalPrice,
-        description: (b.tourId as any)?.title || 'Tour thường',
-        createdAt: (b as any).createdAt,
-        customerName: (b.customerId as any)?.name,
-        orderCode: b.orderCode,
-      })),
-    ]
-      .sort(
-        (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-      )
-      .slice(0, 8);
+    const bookingMap = new Map(
+      standardBookings.map((b) => [b._id.toString(), b]),
+    );
+
+    const recentEarnings = await Promise.all(
+      ownerCredits.slice(0, 8).map(async (t) => {
+        const isPrivate = t.referenceType === 'private_tour_request';
+        if (isPrivate) {
+          const req = t.referenceId
+            ? await this.privateTourRequestModel
+                .findById(t.referenceId)
+                .populate('customerId', 'name')
+                .exec()
+            : null;
+          return {
+            id: t._id,
+            type: 'private_tour' as const,
+            amount: t.amount,
+            description: t.description,
+            createdAt: (t as any).createdAt,
+            orderCode: t.orderCode,
+            customerName: (req?.customerId as any)?.name,
+          };
+        }
+
+        const booking = t.referenceId
+          ? bookingMap.get(t.referenceId.toString())
+          : undefined;
+        if (!booking && t.referenceId) {
+          const fetched = await this.bookingModel
+            .findById(t.referenceId)
+            .populate('customerId', 'name')
+            .populate('tourId', 'title')
+            .exec();
+          return {
+            id: t._id,
+            type: 'standard_tour' as const,
+            amount: t.amount,
+            description: (fetched?.tourId as any)?.title || t.description,
+            createdAt: (t as any).createdAt,
+            orderCode: t.orderCode,
+            customerName: (fetched?.customerId as any)?.name,
+          };
+        }
+        return {
+          id: t._id,
+          type: 'standard_tour' as const,
+          amount: t.amount,
+          description: (booking?.tourId as any)?.title || t.description,
+          createdAt: (t as any).createdAt,
+          orderCode: t.orderCode,
+          customerName: (booking?.customerId as any)?.name,
+        };
+      }),
+    );
 
     return {
       totalRevenue: privateTourRevenue + standardTourRevenue,
@@ -389,7 +473,8 @@ export class WalletsService implements OnModuleInit {
     userId: string,
     amount: number,
     description = 'Thanh toán',
-    referenceId?: string,
+    reference?: { type: string; id?: string },
+    orderCode?: number,
   ): Promise<WalletDocument> {
     const debit = Math.round(Number(amount));
     if (!Number.isFinite(debit) || debit <= 0) {
@@ -411,10 +496,11 @@ export class WalletsService implements OnModuleInit {
       amount: debit,
       balanceAfter: wallet.balance,
       description,
-      referenceType: referenceId ? 'private_tour_request' : undefined,
-      referenceId: referenceId
-        ? new Types.ObjectId(referenceId)
+      referenceType: reference?.type,
+      referenceId: reference?.id
+        ? new Types.ObjectId(reference.id)
         : undefined,
+      orderCode,
     });
 
     return wallet;

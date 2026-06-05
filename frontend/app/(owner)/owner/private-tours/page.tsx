@@ -3,34 +3,17 @@
 import { useState, useEffect } from "react";
 import {
   MapPin,
-  Users,
-  CurrencyCircleDollar,
   PaperPlaneTilt,
-  CaretDown,
-  CaretUp,
+  Eye,
 } from "@phosphor-icons/react";
-
-interface PrivateRequest {
-  _id: string;
-  estimatedPrice: number;
-  numberOfParticipants: number;
-  customerNotes?: string;
-  status: string;
-  createdAt: string;
-  privateTourDetails?: {
-    destinations?: { name: string; days: number; nights: number }[];
-    startDate?: string;
-    endDate?: string;
-    activities?: { name: string; day: number; time: string; price: number }[];
-  };
-  customerId?: { name?: string; email?: string };
-  quotes?: { _id: string; ownerId: string | { _id?: string }; offeredPrice: number; status: string }[];
-}
+import PrivateTourDetailModal, {
+  type PrivateTourRequestDetail,
+} from "@/app/components/PrivateTourDetailModal";
 
 export default function OwnerPrivateToursPage() {
-  const [requests, setRequests] = useState<PrivateRequest[]>([]);
+  const [requests, setRequests] = useState<PrivateTourRequestDetail[]>([]);
   const [loading, setLoading] = useState(true);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [detailRequest, setDetailRequest] = useState<PrivateTourRequestDetail | null>(null);
   const [quoteForms, setQuoteForms] = useState<Record<string, { price: string; message: string }>>({});
   const [submitting, setSubmitting] = useState<string | null>(null);
   const [myUserId, setMyUserId] = useState<string>("");
@@ -145,7 +128,6 @@ export default function OwnerPrivateToursPage() {
           {requests.map((req) => {
             const details = req.privateTourDetails;
             const destNames = details?.destinations?.map((d) => d.name).join(" → ") || "—";
-            const isExpanded = expandedId === req._id;
             const myQuote = req.quotes?.find((q) => {
               const oid = typeof q.ownerId === "object" ? (q.ownerId as { _id?: string })?._id : q.ownerId;
               return oid?.toString() === myUserId;
@@ -221,26 +203,24 @@ export default function OwnerPrivateToursPage() {
                   </div>
 
                   <button
-                    onClick={() => setExpandedId(isExpanded ? null : req._id)}
-                    className="mt-4 flex items-center gap-1 text-[#38BDF8] text-[13px] font-bold"
+                    onClick={() => setDetailRequest(req)}
+                    className="mt-4 flex items-center gap-2 text-[#38BDF8] hover:text-[#32AADB] text-[13px] font-bold transition-colors"
                   >
-                    {isExpanded ? <>Thu gọn <CaretUp size={14} /></> : <>Chi tiết <CaretDown size={14} /></>}
+                    <Eye size={16} weight="fill" />
+                    Xem chi tiết tour khách mong muốn
                   </button>
-
-                  {isExpanded && (
-                    <div className="mt-4 pt-4 border-t border-gray-100 text-sm text-gray-600 space-y-2">
-                      {req.customerNotes && <p><strong>Yêu cầu:</strong> {req.customerNotes}</p>}
-                      {details?.activities && details.activities.length > 0 && (
-                        <p><strong>Hoạt động:</strong> {details.activities.length} hoạt động đã lên lịch</p>
-                      )}
-                    </div>
-                  )}
                 </div>
               </div>
             );
           })}
         </div>
       )}
+
+      <PrivateTourDetailModal
+        request={detailRequest}
+        myUserId={myUserId}
+        onClose={() => setDetailRequest(null)}
+      />
     </div>
   );
 }

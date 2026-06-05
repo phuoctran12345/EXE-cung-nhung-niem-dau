@@ -6,6 +6,7 @@ import { Booking, BookingSchema } from './schemas/booking.schema';
 import { ToursModule } from '../tours/tours.module';
 import { VouchersModule } from '../vouchers/vouchers.module';
 import { PrivateTourRequestsModule } from '../private-tour-requests/private-tour-requests.module';
+import { WalletsModule } from '../wallets/wallets.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { PrivateTourRequestsModule } from '../private-tour-requests/private-tour
     ToursModule,
     VouchersModule,
     PrivateTourRequestsModule,
+    WalletsModule,
   ],
   controllers: [BookingsController],
   providers: [BookingsService],

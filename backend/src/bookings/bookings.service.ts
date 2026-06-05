@@ -6,6 +6,7 @@ import PayOS = require('@payos/node');
 import { ConfigService } from '@nestjs/config';
 import { ToursService } from '../tours/tours.service';
 import { VouchersService } from '../vouchers/vouchers.service';
+import { WalletsService } from '../wallets/wallets.service';
 
 @Injectable()
 export class BookingsService {
@@ -18,6 +19,7 @@ export class BookingsService {
     private configService: ConfigService,
     private toursService: ToursService,
     private vouchersService: VouchersService,
+    private walletsService: WalletsService,
   ) {
     this.payOS = new PayOS(
       this.configService.get<string>('PAYOS_CLIENT_ID') || '',
@@ -98,10 +100,46 @@ export class BookingsService {
     const orderCode = Number(String(Date.now()).slice(-9)) + Math.floor(Math.random() * 1000);
     const tourObjectId = new Types.ObjectId(resolvedTourId);
     const customerObjectId = new Types.ObjectId(customerIdStr);
+    const ownerId = (tour as any).ownerId?.toString?.() ?? '';
+
+    const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'https://travel-match-jade.vercel.app';
+
+    if (totalPrice <= 0) {
+      const cachePayload = {
+        tourId: tourObjectId,
+        customerId: customerObjectId,
+        ownerId: (tour as any).ownerId,
+        numberOfParticipants: participants,
+        totalPrice,
+        originalPrice: subtotal,
+        discountAmount,
+        voucherCode,
+        voucherId: voucherId ? new Types.ObjectId(voucherId) : undefined,
+        orderCode,
+        customerNotes: (bookingData as { customerNotes?: string }).customerNotes,
+        bookingType: 'standard' as const,
+        walletUsed: 0,
+      };
+      this.pendingBookingsCache.set(orderCode, cachePayload);
+      return this.completeFreeBooking(orderCode, frontendUrl);
+    }
+
+    const wallet = await this.walletsService.getOrCreateUserWallet(customerIdStr);
+    const walletBalance = wallet.balance;
+    const walletUsed = Math.min(walletBalance, totalPrice);
+    const payosAmount = totalPrice - walletUsed;
+
+    if (payosAmount > 0 && payosAmount < PAYOS_MIN_AMOUNT) {
+      throw new BadRequestException(
+        `Số dư ví không đủ để thanh toán phần còn lại (${payosAmount.toLocaleString('vi-VN')} VNĐ). ` +
+          `Vui lòng nạp thêm vào ví hoặc đảm bảo số dư đủ toàn bộ đơn hàng.`,
+      );
+    }
 
     const cachePayload = {
       tourId: tourObjectId,
       customerId: customerObjectId,
+      ownerId: (tour as any).ownerId,
       numberOfParticipants: participants,
       totalPrice,
       originalPrice: subtotal,
@@ -110,9 +148,8 @@ export class BookingsService {
       voucherId: voucherId ? new Types.ObjectId(voucherId) : undefined,
       orderCode,
       customerNotes: (bookingData as { customerNotes?: string }).customerNotes,
-      bookingType: isPrivateTour ? 'private' : 'standard',
-      privateTourDetails: (bookingData as { privateTourDetails?: Record<string, unknown> }).privateTourDetails,
-      ownerStatus: isPrivateTour ? 'pending' : undefined,
+      bookingType: 'standard' as const,
+      walletUsed,
     };
 
     this.pendingBookingsCache.set(orderCode, cachePayload);
@@ -123,40 +160,118 @@ export class BookingsService {
       }
     }, 30 * 60 * 1000);
 
-    const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'https://travel-match-jade.vercel.app';
-
-    if (totalPrice <= 0) {
-      return this.completeFreeBooking(orderCode, frontendUrl);
+    if (walletUsed > 0) {
+      await this.walletsService.debitWallet(
+        customerIdStr,
+        walletUsed,
+        `Thanh toán tour (trừ ví) #${orderCode}`,
+        { type: 'booking_pending' },
+        orderCode,
+      );
     }
 
-    if (totalPrice < PAYOS_MIN_AMOUNT) {
-      throw new BadRequestException(
-        `Số tiền thanh toán sau giảm giá phải tối thiểu ${PAYOS_MIN_AMOUNT.toLocaleString('vi-VN')} VNĐ (PayOS).`,
-      );
+    if (payosAmount <= 0) {
+      return this.completeWalletBooking(orderCode, frontendUrl, {
+        totalPrice,
+        walletUsed,
+        payosAmount: 0,
+        walletBalance: walletBalance - walletUsed,
+      });
     }
 
     const paymentBody = {
       orderCode,
-      amount: totalPrice,
+      amount: payosAmount,
       description: `TM-${orderCode}`,
       cancelUrl: `${frontendUrl}/payment/cancel?orderCode=${orderCode}`,
       returnUrl: `${frontendUrl}/payment/success?orderCode=${orderCode}`,
     };
 
     try {
-      console.log('>>> [BACKEND] Đang tạo link thanh toán:', orderCode, 'amount:', totalPrice);
+      console.log(
+        '>>> [BACKEND] Tạo link PayOS:',
+        orderCode,
+        'payos:',
+        payosAmount,
+        'wallet:',
+        walletUsed,
+      );
       const paymentLink = await this.payOS.createPaymentLink(paymentBody);
       return {
         success: true,
-        data: { paymentUrl: paymentLink.checkoutUrl },
+        data: {
+          paymentUrl: paymentLink.checkoutUrl,
+          totalPrice,
+          walletUsed,
+          payosAmount,
+          walletBalance: walletBalance - walletUsed,
+        },
       };
     } catch (error: any) {
+      this.pendingBookingsCache.delete(orderCode);
+      if (walletUsed > 0) {
+        await this.walletsService.creditWallet(
+          customerIdStr,
+          walletUsed,
+          `Hoàn tiền ví do lỗi thanh toán PayOS #${orderCode}`,
+        );
+      }
       console.error('>>> [BACKEND] Lỗi PayOS:', error?.message || error);
       const payosMsg = error?.message || '';
       throw new BadRequestException(
         payosMsg.includes('amount') || payosMsg.includes('Amount')
           ? 'Số tiền thanh toán không hợp lệ với PayOS. Vui lòng kiểm tra lại mã giảm giá.'
           : 'Lỗi hệ thống thanh toán. Vui lòng thử lại.',
+      );
+    }
+  }
+
+  private async completeWalletBooking(
+    orderCode: number,
+    frontendUrl: string,
+    paymentInfo: {
+      totalPrice: number;
+      walletUsed: number;
+      payosAmount: number;
+      walletBalance: number;
+    },
+  ): Promise<{
+    success: boolean;
+    data: {
+      paidFully: boolean;
+      redirectUrl: string;
+      totalPrice: number;
+      walletUsed: number;
+      payosAmount: number;
+      walletBalance: number;
+    };
+  }> {
+    try {
+      const booking = await this.saveBookingToDb(orderCode);
+      if (!booking) {
+        throw new BadRequestException('Không thể hoàn tất đặt tour. Vui lòng thử lại.');
+      }
+      return {
+        success: true,
+        data: {
+          paidFully: true,
+          redirectUrl: `${frontendUrl}/payment/success?orderCode=${orderCode}&wallet=1`,
+          ...paymentInfo,
+        },
+      };
+    } catch (error: any) {
+      const cached = this.pendingBookingsCache.get(orderCode);
+      if (cached?.walletUsed > 0) {
+        await this.walletsService.creditWallet(
+          cached.customerId.toString(),
+          cached.walletUsed,
+          `Hoàn tiền ví do lỗi hoàn tất đơn #${orderCode}`,
+        );
+      }
+      this.pendingBookingsCache.delete(orderCode);
+      if (error instanceof BadRequestException) throw error;
+      throw new BadRequestException(
+        error?.message || 'Không thể hoàn tất đặt tour. Vui lòng thử lại.',
       );
     }
   }
@@ -257,6 +372,22 @@ export class BookingsService {
     await this.toursService.updateSlots(savedBooking.tourId.toString(), newSlots);
 
     this.pendingBookingsCache.delete(orderCode);
+
+    if (
+      savedBooking.totalPrice > 0 &&
+      cachedData.ownerId &&
+      cachedData.bookingType === 'standard'
+    ) {
+      await this.walletsService.settleStandardTourPayment({
+        ownerId: cachedData.ownerId.toString(),
+        totalAmount: savedBooking.totalPrice,
+        bookingId: (savedBooking as BookingDocument)._id.toString(),
+        orderCode,
+      });
+      console.log(
+        `>>> [BACKEND] Đã chia ví owner/sàn cho đơn tour thường #${orderCode}.`,
+      );
+    }
 
     console.log(`>>> [BACKEND] Đã CHÍNH THỨC lưu đơn hàng ${orderCode} vào cơ sở dữ liệu.`);
     return savedBooking;

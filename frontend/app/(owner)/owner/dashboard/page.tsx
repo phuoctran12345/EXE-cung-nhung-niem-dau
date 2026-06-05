@@ -21,6 +21,7 @@ export default function OwnerDashboard() {
     totalRevenue: 0,
     walletBalance: 0,
     privateTourRevenue: 0,
+    standardTourRevenue: 0,
     averageRating: 4.8
   });
   const [recentEarnings, setRecentEarnings] = useState<any[]>([]);
@@ -46,6 +47,7 @@ export default function OwnerDashboard() {
             totalRevenue: data.totalRevenue ?? 0,
             walletBalance: data.walletBalance ?? 0,
             privateTourRevenue: data.privateTourRevenue ?? 0,
+            standardTourRevenue: data.standardTourRevenue ?? 0,
             averageRating: 4.9,
           });
         }
@@ -97,7 +99,7 @@ export default function OwnerDashboard() {
           icon={<CurrencyCircleDollar size={32} weight="fill" className="text-amber-500" />} 
           label="Tổng doanh thu (VNĐ)" 
           value={stats.totalRevenue.toLocaleString("vi-VN")} 
-          trend={`Ví: ${stats.walletBalance.toLocaleString("vi-VN")} · Tour CN: ${stats.privateTourRevenue.toLocaleString("vi-VN")}`}
+          trend={`Ví: ${stats.walletBalance.toLocaleString("vi-VN")} · Thường: ${stats.standardTourRevenue.toLocaleString("vi-VN")} · CN: ${stats.privateTourRevenue.toLocaleString("vi-VN")}`}
           color="bg-amber-50"
         />
         <OwnerStatCard 
@@ -136,7 +138,7 @@ export default function OwnerDashboard() {
                 <div className="text-right">
                   <div className="font-black text-[#1A2434]">+{item.amount?.toLocaleString("vi-VN")} VNĐ</div>
                   <div className="text-[12px] text-green-500 font-bold uppercase tracking-widest mt-1">
-                    {item.type === "private_tour" ? "90% tour CN" : "Tour thường"}
+                    {item.type === "private_tour" ? "90% tour CN" : "90% tour thường"}
                   </div>
                 </div>
               </div>

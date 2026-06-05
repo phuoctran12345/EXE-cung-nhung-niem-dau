@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Users, CreditCard, ShieldCheck, ArrowRight, X, WarningCircle, CircleNotch, PaperPlaneTilt, Ticket } from "@phosphor-icons/react";
+import { Users, CreditCard, ShieldCheck, ArrowRight, X, WarningCircle, CircleNotch, PaperPlaneTilt, Ticket, Wallet } from "@phosphor-icons/react";
 import Image from "next/image";
 
 interface BookingFormProps {
@@ -20,6 +20,7 @@ export default function BookingForm({ isOpen, onClose, tour, participants: initi
   const [discountAmount, setDiscountAmount] = useState(0);
   const [appliedVoucher, setAppliedVoucher] = useState<string | null>(null);
   const [voucherLoading, setVoucherLoading] = useState(false);
+  const [walletBalance, setWalletBalance] = useState(0);
 
   useEffect(() => {
     setMounted(true);
@@ -31,6 +32,18 @@ export default function BookingForm({ isOpen, onClose, tour, participants: initi
       setVoucherCode("");
       setDiscountAmount(0);
       setAppliedVoucher(null);
+      const token = localStorage.getItem("token");
+      if (token) {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4001/api";
+        fetch(`${apiUrl}/wallets/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+          .then((r) => (r.ok ? r.json() : null))
+          .then((d) => setWalletBalance(d?.balance ?? 0))
+          .catch(() => setWalletBalance(0));
+      } else {
+        setWalletBalance(0);
+      }
     }
   }, [isOpen]);
 
@@ -45,6 +58,9 @@ export default function BookingForm({ isOpen, onClose, tour, participants: initi
   const subtotal = price * participants;
   const totalPrice = Math.max(0, subtotal - discountAmount);
   const isFreeCheckout = totalPrice === 0 && !!appliedVoucher;
+  const walletUsed = Math.min(walletBalance, totalPrice);
+  const payosAmount = Math.max(0, totalPrice - walletUsed);
+  const paysFullyByWallet = totalPrice > 0 && payosAmount === 0;
 
   const formatVND = (amount: number) => {
     return amount.toLocaleString("vi-VN") + " VNĐ";
@@ -153,7 +169,9 @@ export default function BookingForm({ isOpen, onClose, tour, participants: initi
       });
 
       const result = await res.json();
-      const paymentUrl = result?.data?.paymentUrl;
+      const data = result?.data;
+      const paymentUrl = data?.paymentUrl;
+      const redirectUrl = data?.redirectUrl;
 
       if (!res.ok) {
         setLoading(false);
@@ -167,8 +185,21 @@ export default function BookingForm({ isOpen, onClose, tour, participants: initi
         return;
       }
 
+      if (data?.paidFully && redirectUrl) {
+        setTimeout(() => {
+          window.location.assign(redirectUrl);
+        }, 600);
+        return;
+      }
+
       if (paymentUrl) {
-        const delay = result?.data?.isFree ? 400 : 1200;
+        if (data?.walletUsed > 0 && data?.payosAmount > 0) {
+          alert(
+            `Đã trừ ${data.walletUsed.toLocaleString("vi-VN")} VNĐ từ ví. ` +
+              `Chuyển PayOS để thanh toán phần còn lại ${data.payosAmount.toLocaleString("vi-VN")} VNĐ.`
+          );
+        }
+        const delay = data?.isFree ? 400 : 1200;
         setTimeout(() => {
           window.location.assign(paymentUrl);
         }, delay);
@@ -305,6 +336,20 @@ export default function BookingForm({ isOpen, onClose, tour, participants: initi
               <span className="text-[#1E293B] font-extrabold text-lg">Tổng thanh toán</span>
               <span className="text-[#38BDF8] font-black text-2xl">{formatVND(totalPrice)}</span>
             </div>
+            {!isFreeCheckout && totalPrice > 0 && (
+              <div className="mt-4 pt-3 border-t border-[#38BDF8]/10 space-y-1.5 text-[13px]">
+                <div className="flex items-center gap-2 text-gray-500 font-bold">
+                  <Wallet size={16} className="text-[#38BDF8]" weight="fill" />
+                  Số dư ví: {formatVND(walletBalance)}
+                </div>
+                <p>Trừ từ ví: <strong className="text-emerald-600">{formatVND(walletUsed)}</strong></p>
+                {payosAmount > 0 ? (
+                  <p>Qua PayOS: <strong className="text-[#38BDF8]">{formatVND(payosAmount)}</strong></p>
+                ) : (
+                  <p className="text-emerald-600 font-medium">Đủ số dư ví — không cần PayOS</p>
+                )}
+              </div>
+            )}
           </div>
 
           <button 
@@ -317,13 +362,21 @@ export default function BookingForm({ isOpen, onClose, tour, participants: initi
             }`}
           >
             <CreditCard size={24} weight="bold" />
-            {isFreeCheckout ? "Xác nhận đặt tour miễn phí" : "Tiến hành thanh toán"}
+            {isFreeCheckout
+              ? "Xác nhận đặt tour miễn phí"
+              : paysFullyByWallet
+                ? "Thanh toán bằng ví"
+                : "Tiến hành thanh toán"}
             <ArrowRight size={20} weight="bold" />
           </button>
 
           <div className="mt-6 flex items-center justify-center gap-2 text-[13px] text-gray-400 font-medium italic">
             <ShieldCheck size={18} className="text-green-500" />
-            {isFreeCheckout ? "Đơn hàng được xác nhận ngay, không qua cổng PayOS" : "Thanh toán an toàn và bảo mật qua PayOS"}
+            {isFreeCheckout
+              ? "Đơn hàng được xác nhận ngay, không qua cổng PayOS"
+              : paysFullyByWallet
+                ? "Thanh toán ưu tiên từ ví — 90% vào ví chủ tour, 10% phí sàn"
+                : "Ưu tiên trừ ví trước, phần còn lại qua PayOS (tài khoản admin)"}
           </div>
         </div>
       </div>

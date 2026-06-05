@@ -249,7 +249,8 @@ export class PrivateTourRequestsService {
         customerId,
         walletUsed,
         `Thanh toán tour cá nhân (trừ ví) #${orderCode}`,
-        requestId,
+        { type: 'private_tour_request', id: requestId },
+        orderCode,
       );
     }
 
