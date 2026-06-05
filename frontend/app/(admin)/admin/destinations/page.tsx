@@ -20,6 +20,7 @@ interface Destination {
   slug: string;
   toursCount: string;
   img: string;
+  stayPricePerNight?: number;
 }
 
 interface Activity {
@@ -35,7 +36,7 @@ interface Activity {
 
 const CATEGORIES = ["Sightseeing", "Dining", "Entertainment", "Shopping", "Relax"];
 
-const emptyDestination = { name: "", slug: "", toursCount: "0 Tours", img: "" };
+const emptyDestination = { name: "", slug: "", toursCount: "0 Tours", img: "", stayPricePerNight: 750_000 };
 const emptyActivity = {
   name: "",
   address: "",
@@ -182,6 +183,7 @@ export default function AdminDestinationsPage() {
       slug: dest.slug,
       toursCount: dest.toursCount,
       img: dest.img,
+      stayPricePerNight: dest.stayPricePerNight ?? 650_000,
     });
     setShowDestForm(true);
   };
@@ -414,6 +416,9 @@ export default function AdminDestinationsPage() {
                         <h2 className="text-2xl font-bold text-[#1E293B]">{selectedDest.name}</h2>
                         <p className="text-gray-400 text-sm mt-1">Slug: {selectedDest.slug}</p>
                         <p className="text-gray-500 text-sm mt-0.5">{selectedDest.toursCount}</p>
+                        <p className="text-[#38BDF8] text-sm font-bold mt-1">
+                          Lưu trú: {formatVND(selectedDest.stayPricePerNight ?? 650_000)}/đêm (phòng đôi)
+                        </p>
                       </div>
                       <div className="flex gap-2">
                         <button
@@ -540,6 +545,19 @@ export default function AdminDestinationsPage() {
                 value={destForm.toursCount}
                 onChange={(e) => setDestForm({ ...destForm, toursCount: e.target.value })}
                 placeholder="100+ Tours"
+                className={inputClass}
+              />
+            </FormField>
+            <FormField label="Giá lưu trú / đêm (VNĐ, phòng đôi)">
+              <input
+                type="number"
+                min={0}
+                step={50_000}
+                value={destForm.stayPricePerNight}
+                onChange={(e) =>
+                  setDestForm({ ...destForm, stayPricePerNight: Number(e.target.value) })
+                }
+                placeholder="750000"
                 className={inputClass}
               />
             </FormField>

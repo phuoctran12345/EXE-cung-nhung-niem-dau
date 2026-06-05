@@ -6,6 +6,7 @@ import React from "react";
 import Image from "next/image";
 import { Clock, CheckCircle, Calendar, Robot, Sparkle, X } from "@phosphor-icons/react";
 import { getActivitiesByDestinationId, Activity, formatVND } from "../data/mockData";
+import { calcPrivateTourPrice } from "../utils/privateTourPricing";
 import { recommendTour, chatTour } from "../services/ai.service";
 
 const PRIVATE_TOUR_NOTES = [
@@ -60,10 +61,12 @@ export default function Stepper({ activeStep, onStepClick }: StepperProps) {
 // ==== Additional Components for Itinerary workflow ==== 
 
 type Destination = {
-  id: string; // Đổi sang string cho ObjectId
+  id: string;
   name: string;
   location: string;
   image: string;
+  slug?: string;
+  stayPricePerNight?: number;
 };
 
 export function ActivityItem({ 
@@ -787,20 +790,17 @@ export function Summary({
   const [activeTab, setActiveTab] = React.useState<'overview' | 'itinerary' | 'reviews' | 'policies'>('itinerary');
   const [activeDay, setActiveDay] = React.useState(1);
 
-  const totalDays = Object.values(durations).reduce((sum, d) => sum + d.days, 0);
-  const totalNights = Object.values(durations).reduce((sum, d) => sum + d.nights, 0);
-  
   const scheduledList = Object.values(scheduledActs);
   const totalActivitiesCount = scheduledList.length;
 
-  const totalStayPriceUSD = destinations.reduce((sum, dest) => {
-    const days = durations[dest.id]?.days || 1;
-    return sum + 60.00 * days;
-  }, 0);
-
-  const totalActivitiesPriceUSD = scheduledList.reduce((sum, act) => sum + act.price, 0);
-  const pricePerPersonUSD = totalStayPriceUSD + totalActivitiesPriceUSD;
-  const totalPriceUSD = (adults + children * 0.5) * pricePerPersonUSD;
+  const pricing = calcPrivateTourPrice({
+    destinations,
+    durations,
+    scheduledActs: scheduledList,
+    adults,
+    children,
+  });
+  const { totalDays, totalNights, pricePerPerson, total: totalPriceVND } = pricing;
 
   const getFormattedDayDate = (dayNum: number) => {
     if (!startDate) return `Day ${dayNum}`;
@@ -942,9 +942,32 @@ export function Summary({
       <div className="w-full lg:w-[380px] flex-shrink-0">
         <div className="bg-white rounded-3xl border border-slate-100 p-6 shadow-[0_8px_30px_rgb(0,0,0,0.03)] sticky top-24">
           <h3 className="text-[18px] font-bold text-[#1C2B38] mb-1">Trip Overview</h3>
-          <p className="text-[#38BDF8] text-[16px] font-extrabold mb-6">
-            {formatVND(pricePerPersonUSD)} <span className="text-slate-400 text-[12px] font-medium">/ person</span>
+          <p className="text-[#38BDF8] text-[16px] font-extrabold mb-4">
+            {formatVND(pricePerPerson)} <span className="text-slate-400 text-[12px] font-medium">/ người</span>
           </p>
+
+          <div className="space-y-2 mb-6 border-b border-slate-100 pb-6 text-[12px]">
+            <div className="flex justify-between text-slate-500">
+              <span>Xe riêng ({pricing.totalDays} ngày)</span>
+              <span className="font-semibold text-slate-700">{formatVND(pricing.transportCost)}</span>
+            </div>
+            <div className="flex justify-between text-slate-500">
+              <span>Hướng dẫn viên ({pricing.totalDays} ngày)</span>
+              <span className="font-semibold text-slate-700">{formatVND(pricing.guideCost)}</span>
+            </div>
+            <div className="flex justify-between text-slate-500">
+              <span>Phí điều hành tour</span>
+              <span className="font-semibold text-slate-700">{formatVND(pricing.platformFee)}</span>
+            </div>
+            <div className="flex justify-between text-slate-500">
+              <span>Lưu trú ({pricing.totalNights} đêm)</span>
+              <span className="font-semibold text-slate-700">{formatVND(pricing.stayCost)}</span>
+            </div>
+            <div className="flex justify-between text-slate-500">
+              <span>Hoạt động ({pricing.equivalentGuests} khách)</span>
+              <span className="font-semibold text-slate-700">{formatVND(pricing.activitiesTotal)}</span>
+            </div>
+          </div>
           
           <div className="space-y-3 mb-6 border-b border-slate-100 pb-6">
             <div className="flex justify-between items-center text-[13px]">
@@ -964,8 +987,10 @@ export function Summary({
           {/* Destination List with small images */}
           <div className="space-y-3 mb-6 border-b border-slate-100 pb-6">
             {destinations.map((dest, idx) => {
-              const days = durations[dest.id]?.days || 1;
-              const destStayPriceUSD = 60.00 * days;
+              const destDuration = durations[dest.id] || { days: 1, nights: 0 };
+              const nights = destDuration.nights;
+              const pricePerNight = dest.stayPricePerNight ?? 650_000;
+              const destStayPrice = pricePerNight * nights;
               return (
                 <div key={dest.id} className="flex items-center gap-3">
                   <div className="w-5 h-5 rounded-full bg-[#38BDF8] text-white flex items-center justify-center text-[10px] font-bold flex-shrink-0">
@@ -976,9 +1001,18 @@ export function Summary({
                   </div>
                   <div className="flex-1 min-w-0">
                     <h4 className="font-bold text-[#1C2B38] text-[12px] truncate">{dest.name}</h4>
-                    <p className="text-slate-400 text-[10px] font-medium">Day {idx + 1}</p>
+                    <p className="text-slate-400 text-[10px] font-medium">
+                      {destDuration.days} ngày {destDuration.nights} đêm · lưu trú
+                    </p>
                   </div>
-                  <span className="text-[#38BDF8] font-bold text-[12px]">{formatVND(destStayPriceUSD)}</span>
+                  <span className="text-[#38BDF8] font-bold text-[12px] text-right leading-tight">
+                    {formatVND(destStayPrice)}
+                    {nights > 0 && (
+                      <span className="block text-[9px] text-slate-400 font-medium">
+                        {formatVND(pricePerNight)}/đêm
+                      </span>
+                    )}
+                  </span>
                 </div>
               );
             })}
@@ -1027,7 +1061,7 @@ export function Summary({
 
           <div className="flex items-center justify-between mb-6">
             <span className="font-bold text-slate-500 text-[12px] tracking-wider uppercase">Total</span>
-            <span className="font-extrabold text-[#38BDF8] text-[22px]">{formatVND(totalPriceUSD)}</span>
+            <span className="font-extrabold text-[#38BDF8] text-[22px]">{formatVND(totalPriceVND)}</span>
           </div>
 
           <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4">
@@ -1063,7 +1097,7 @@ export function Summary({
             className="w-full bg-gradient-to-r from-sky-400 to-sky-500 hover:from-sky-500 hover:to-sky-600 text-white font-bold py-3.5 rounded-xl transition-all shadow-[0_4px_14px_rgba(56,189,248,0.25)] text-[14px] mb-3 hover:scale-[1.01]"
             onClick={() => onFinish({ 
               participants: adults + children, 
-              totalPrice: totalPriceUSD,
+              totalPrice: totalPriceVND,
               customerNotes: customerNotes.trim() || undefined,
             })}
           >

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, OnModuleInit } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Tour, TourDocument } from './schemas/tour.schema';
@@ -6,12 +6,21 @@ import { Destination, DestinationDocument } from './schemas/destination.schema';
 import { Activity, ActivityDocument } from './schemas/activity.schema';
 
 @Injectable()
-export class ToursService {
+export class ToursService implements OnModuleInit {
   constructor(
     @InjectModel(Tour.name) private tourModel: Model<TourDocument>,
     @InjectModel(Destination.name) private destinationModel: Model<DestinationDocument>,
     @InjectModel(Activity.name) private activityModel: Model<ActivityDocument>,
   ) {}
+
+  async onModuleInit() {
+    await this.destinationModel
+      .updateMany(
+        { slug: 'da-nang' },
+        { $set: { stayPricePerNight: 750_000 } },
+      )
+      .exec();
+  }
 
   // Lấy tất cả tour đã duyệt (Cho khách hàng)
   async findAllApproved(): Promise<Tour[]> {
@@ -148,6 +157,7 @@ export class ToursService {
       slug,
       toursCount: data.toursCount || '0 Tours',
       img: data.img || '',
+      stayPricePerNight: data.stayPricePerNight ?? 650_000,
     });
     return destination.save();
   }
@@ -160,6 +170,7 @@ export class ToursService {
     if (data.name !== undefined) update.name = data.name.trim();
     if (data.toursCount !== undefined) update.toursCount = data.toursCount;
     if (data.img !== undefined) update.img = data.img;
+    if (data.stayPricePerNight !== undefined) update.stayPricePerNight = data.stayPricePerNight;
     if (data.slug !== undefined) {
       const slug = data.slug.trim() || this.slugify(data.name || '');
       const duplicate = await this.destinationModel.findOne({ slug, _id: { $ne: id } }).exec();

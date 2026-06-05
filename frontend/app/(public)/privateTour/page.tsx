@@ -13,10 +13,12 @@ import heroBg from "../../assets/privateTour/image.png";
 
 // Định nghĩa kiểu Destination
 type Destination = {
-  id: string; // Đổi sang string cho ObjectId
+  id: string;
   name: string;
   location: string;
   image: string;
+  slug?: string;
+  stayPricePerNight?: number;
 };
 
 // Dữ liệu địa điểm hiện đã được fetch từ database trong useEffect
@@ -48,8 +50,10 @@ export default function PrivateTourPage() {
         const mapped = data.map((d: any) => ({
           id: d._id,
           name: d.name,
+          slug: d.slug,
           location: "Viet Nam",
-          image: d.img || "https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?w=800&q=80"
+          image: d.img || "https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?w=800&q=80",
+          stayPricePerNight: d.stayPricePerNight ?? (d.slug === "da-nang" ? 750_000 : 650_000),
         }));
         setDestinations(mapped);
       })

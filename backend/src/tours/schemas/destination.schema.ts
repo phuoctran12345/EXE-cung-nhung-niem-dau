@@ -16,6 +16,9 @@ export class Destination {
 
   @Prop()
   img: string; // Hình ảnh đại diện
+
+  @Prop({ default: 650_000 })
+  stayPricePerNight: number; // Giá lưu trú / đêm (phòng đôi, VNĐ)
 }
 
 export const DestinationSchema = SchemaFactory.createForClass(Destination);
