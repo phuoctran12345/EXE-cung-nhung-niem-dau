@@ -160,9 +160,6 @@ export default function PrivateTourPage() {
           const newActs = mappedActs.filter((act: any) => !existingIds.has(act.id));
           return [...prev, ...newActs];
         });
-        
-        // Tự động chọn tất cả hoạt động mới
-        setSelectedActivityIds(prev => [...prev, ...mappedActs.map((a: any) => a.id)]);
       })
       .catch(err => console.error("Lỗi fetch activities:", err));
   };
@@ -432,12 +429,8 @@ export default function PrivateTourPage() {
                 dateRanges={dateRanges}
                 getDaysAndNights={getDaysAndNights}
                 onContinue={() => {
-                  if (activeStep === 1 && (!startDate || !endDate)) {
-                    // Dùng thông báo thay cho alert mặc định nếu được (tuân thủ yêu cầu), nhưng hiện tại ở đây ta có thể dùng alert tạm hoặc toast.
-                    // Theo rules: "Không dùng alert mặc định của trình duyệt". 
-                    // Tạm thời bỏ alert và chỉ return, hoặc set state lỗi nếu có. 
-                    // Vì codebase cũ dùng alert, tôi sẽ thay bằng thông báo custom (nếu có) hoặc 그냥 return
-                    return; 
+                  if (activeStep === 1 && (!startDate || !endDate || selectedDestinations.length === 0)) {
+                    return;
                   }
                   setActiveStep(activeStep + 1);
                 }}

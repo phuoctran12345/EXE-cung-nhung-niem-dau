@@ -6,6 +6,7 @@ import Link from "next/link";
 import { 
   ShieldCheck, 
   Buildings,
+  Compass,
   TrendUp, 
   MapPin, 
   UserGear, 
@@ -53,6 +54,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         <nav className="flex-1 px-4 space-y-2 mt-4">
           <AdminSidebarLink href="/admin/dashboard" icon={<TrendUp size={22} />} label="Bảng điều khiển" />
           <AdminSidebarLink href="/admin/tours" icon={<MapPin size={22} />} label="Kiểm duyệt Tour" />
+          <AdminSidebarLink href="/admin/destinations" icon={<Compass size={22} />} label="Tour Cá nhân" />
           <AdminSidebarLink href="/admin/partners" icon={<Buildings size={22} />} label="Duyệt đối tác" />
           <AdminSidebarLink href="/admin/users" icon={<UserGear size={22} />} label="Quản lý Người dùng" />
         </nav>

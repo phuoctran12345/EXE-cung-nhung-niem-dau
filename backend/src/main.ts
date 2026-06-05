@@ -6,8 +6,14 @@ async function bootstrap() {
   // Tạo đối tượng app từ AppModule
   const app = await NestFactory.create(AppModule);
 
-  // Kích hoạt CORS để cho phép các client (mobile/web) gọi API dễ dàng
-  app.enableCors();
+  app.enableCors({
+    origin: [
+      'http://localhost:3000',
+      'http://127.0.0.1:3000',
+      process.env.FRONTEND_URL,
+    ].filter(Boolean) as string[],
+    credentials: true,
+  });
 
   // Đặt tiền tố toàn cục /api cho tất cả các endpoint (ví dụ: /api/auth/login)
   app.setGlobalPrefix('api');

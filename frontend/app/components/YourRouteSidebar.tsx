@@ -38,6 +38,10 @@ export default function YourRouteSidebar({
   getDaysAndNights,
   onContinue,
 }: YourRouteSidebarProps) {
+  const hasDates = Boolean(startDate && endDate);
+  const hasDestinations = selectedDestinations.length > 0;
+  const canContinueStep1 = hasDates && hasDestinations;
+
   return (
     <div className="w-full lg:w-[420px] bg-white rounded-[24px] border border-gray-100 p-7 sticky top-24 shadow-[0_8px_30px_rgb(0,0,0,0.08)] flex-shrink-0">
       {/* Tiêu đề góc nhìn tổng quan lộ trình */}
@@ -86,19 +90,24 @@ export default function YourRouteSidebar({
       </div>
 
       {/* Nút tiếp tục bước kế tiếp */}
-      {activeStep === 1 && (!startDate || !endDate) && (
+      {activeStep === 1 && !hasDates && (
         <p className="text-rose-500 text-[12px] font-medium mt-4 text-center bg-rose-50 py-2 rounded-lg border border-rose-100">
-          ⚠️ Vui lòng chọn ngày đi ở trên để tiếp tục!
+          Vui lòng chọn ngày đi ở trên để tiếp tục!
+        </p>
+      )}
+      {activeStep === 1 && hasDates && !hasDestinations && (
+        <p className="text-rose-500 text-[12px] font-medium mt-4 text-center bg-rose-50 py-2 rounded-lg border border-rose-100">
+          Vui lòng chọn ít nhất một địa điểm để tiếp tục!
         </p>
       )}
       <button
         className={`w-full font-bold py-4 rounded-xl mt-3 transition-all shadow-md text-[15px] select-none uppercase tracking-wide duration-200 ${
-          activeStep === 1 && (!startDate || !endDate)
+          activeStep === 1 && !canContinueStep1
             ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
             : 'bg-[#38BDF8] hover:bg-[#0284C7] text-white hover:scale-[1.01]'
         }`}
         onClick={() => {
-          if (activeStep === 1 && (!startDate || !endDate)) return;
+          if (activeStep === 1 && !canContinueStep1) return;
           onContinue();
         }}
       >

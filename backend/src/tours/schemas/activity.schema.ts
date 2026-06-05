@@ -23,8 +23,8 @@ export class Activity {
   @Prop()
   durationHours: number; // Thời lượng diễn ra hoạt động (tính bằng giờ)
 
-  @Prop({ default: 'Any', enum: ['Morning', 'Afternoon', 'Night', 'Any'] })
-  category: string; // Khung giờ phù hợp (Sáng, Chiều, Tối, Bất kỳ)
+  @Prop({ default: 'Sightseeing' })
+  category: string; // Loại dịch vụ (Sightseeing, Dining, Entertainment, Shopping, Relax)
 }
 
 export const ActivitySchema = SchemaFactory.createForClass(Activity);

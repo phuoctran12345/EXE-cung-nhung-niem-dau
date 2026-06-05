@@ -131,4 +131,109 @@ export class ToursService {
   async findActivitiesByDestination(destinationId: string): Promise<Activity[]> {
     return this.activityModel.find({ destinationId: new Types.ObjectId(destinationId) }).exec();
   }
+
+  // --- Admin: Quản lý địa điểm (Private Tour) ---
+
+  async createDestination(data: Partial<Destination>): Promise<Destination> {
+    if (!data.name?.trim()) {
+      throw new BadRequestException('Tên thành phố là bắt buộc');
+    }
+    const slug = data.slug?.trim() || this.slugify(data.name);
+    const existing = await this.destinationModel.findOne({ slug }).exec();
+    if (existing) {
+      throw new BadRequestException('Slug thành phố đã tồn tại');
+    }
+    const destination = new this.destinationModel({
+      name: data.name.trim(),
+      slug,
+      toursCount: data.toursCount || '0 Tours',
+      img: data.img || '',
+    });
+    return destination.save();
+  }
+
+  async updateDestination(id: string, data: Partial<Destination>): Promise<Destination> {
+    if (!Types.ObjectId.isValid(id)) {
+      throw new BadRequestException('ID địa điểm không hợp lệ');
+    }
+    const update: Partial<Destination> = {};
+    if (data.name !== undefined) update.name = data.name.trim();
+    if (data.toursCount !== undefined) update.toursCount = data.toursCount;
+    if (data.img !== undefined) update.img = data.img;
+    if (data.slug !== undefined) {
+      const slug = data.slug.trim() || this.slugify(data.name || '');
+      const duplicate = await this.destinationModel.findOne({ slug, _id: { $ne: id } }).exec();
+      if (duplicate) {
+        throw new BadRequestException('Slug thành phố đã tồn tại');
+      }
+      update.slug = slug;
+    }
+    const destination = await this.destinationModel
+      .findByIdAndUpdate(id, update, { new: true })
+      .exec();
+    if (!destination) throw new NotFoundException('Không tìm thấy địa điểm');
+    return destination;
+  }
+
+  async deleteDestination(id: string): Promise<void> {
+    if (!Types.ObjectId.isValid(id)) {
+      throw new BadRequestException('ID địa điểm không hợp lệ');
+    }
+    const destination = await this.destinationModel.findByIdAndDelete(id).exec();
+    if (!destination) throw new NotFoundException('Không tìm thấy địa điểm');
+    await this.activityModel.deleteMany({ destinationId: new Types.ObjectId(id) }).exec();
+  }
+
+  // --- Admin: Quản lý dịch vụ / hoạt động ---
+
+  async createActivity(destinationId: string, data: Partial<Activity>): Promise<Activity> {
+    if (!Types.ObjectId.isValid(destinationId)) {
+      throw new BadRequestException('ID địa điểm không hợp lệ');
+    }
+    const destination = await this.destinationModel.findById(destinationId).exec();
+    if (!destination) throw new NotFoundException('Không tìm thấy địa điểm');
+
+    if (!data.name?.trim()) {
+      throw new BadRequestException('Tên dịch vụ là bắt buộc');
+    }
+    if (data.price === undefined || data.price < 0) {
+      throw new BadRequestException('Giá dịch vụ không hợp lệ');
+    }
+
+    const activity = new this.activityModel({
+      destinationId: new Types.ObjectId(destinationId),
+      name: data.name.trim(),
+      address: data.address || '',
+      price: data.price,
+      image: data.image || '',
+      durationHours: data.durationHours ?? 1,
+      category: data.category || 'Sightseeing',
+    });
+    return activity.save();
+  }
+
+  async updateActivity(id: string, data: Partial<Activity>): Promise<Activity> {
+    if (!Types.ObjectId.isValid(id)) {
+      throw new BadRequestException('ID dịch vụ không hợp lệ');
+    }
+    const update: Record<string, unknown> = {};
+    if (data.name !== undefined) update.name = data.name.trim();
+    if (data.address !== undefined) update.address = data.address;
+    if (data.price !== undefined) update.price = data.price;
+    if (data.image !== undefined) update.image = data.image;
+    if (data.durationHours !== undefined) update.durationHours = data.durationHours;
+    if (data.category !== undefined) update.category = data.category;
+
+    const activity = await this.activityModel.findByIdAndUpdate(id, update, { new: true }).exec();
+    if (!activity) throw new NotFoundException('Không tìm thấy dịch vụ');
+    return activity;
+  }
+
+  async deleteActivity(id: string): Promise<void> {
+    if (!Types.ObjectId.isValid(id)) {
+      throw new BadRequestException('ID dịch vụ không hợp lệ');
+    }
+    const activity = await this.activityModel.findByIdAndDelete(id).exec();
+    if (!activity) throw new NotFoundException('Không tìm thấy dịch vụ');
+  }
 }
