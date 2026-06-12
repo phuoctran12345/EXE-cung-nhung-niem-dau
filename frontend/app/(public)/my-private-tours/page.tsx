@@ -329,9 +329,6 @@ export default function MyPrivateToursPage() {
                             {viaPayos > 0 && (
                               <p>Qua PayOS: <strong className="text-[#38BDF8]">{formatVND(viaPayos)}</strong></p>
                             )}
-                            {viaPayos === 0 && (
-                              <p className="text-emerald-600 font-medium">Đủ số dư ví — không cần PayOS</p>
-                            )}
                           </div>
                         )}
                         <button
