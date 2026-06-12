@@ -74,7 +74,7 @@ export default function StayRangePicker({
     const minSelectableDate = new Date(
       today.getFullYear(),
       today.getMonth(),
-      today.getDate(),
+      today.getDate() + 1,
     );
 
     const year = baseDate.getFullYear();

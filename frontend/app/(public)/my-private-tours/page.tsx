@@ -17,7 +17,15 @@ interface Quote {
   offeredPrice: number;
   message?: string;
   status: string;
-  ownerId?: { name?: string; email?: string };
+  ownerId?: { name?: string; avatarUrl?: string };
+  ownerInfo?: {
+    verified?: boolean;
+    companyName?: string;
+    address?: string;
+    description?: string;
+    representativeName?: string;
+    tourCount?: number;
+  };
 }
 
 interface PrivateRequest {
@@ -226,31 +234,78 @@ export default function MyPrivateToursPage() {
                         </p>
                       ) : (
                         <div className="space-y-3">
-                          {pendingQuotes.map((q) => (
-                            <div
-                              key={q._id}
-                              className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 bg-sky-50 rounded-xl border border-sky-100"
-                            >
-                              <div>
-                                <p className="font-bold text-[#1E293B]">
-                                  {q.ownerId?.name || "Chủ tour"}
-                                </p>
-                                <p className="text-[#38BDF8] font-extrabold text-lg">
-                                  {formatVND(q.offeredPrice)}
-                                </p>
-                                {q.message && (
-                                  <p className="text-sm text-gray-500 mt-1">{q.message}</p>
-                                )}
-                              </div>
-                              <button
-                                onClick={() => handleAcceptQuote(q._id)}
-                                disabled={actionId === q._id}
-                                className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl text-[13px] disabled:opacity-50"
+                          {pendingQuotes.map((q) => {
+                            const info = q.ownerInfo;
+                            const displayName =
+                              info?.companyName || q.ownerId?.name || "Chủ tour";
+                            return (
+                              <div
+                                key={q._id}
+                                className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 p-4 bg-sky-50 rounded-xl border border-sky-100"
                               >
-                                Chấp nhận báo giá
-                              </button>
-                            </div>
-                          ))}
+                                <div className="flex gap-3 min-w-0">
+                                  {q.ownerId?.avatarUrl ? (
+                                    // eslint-disable-next-line @next/next/no-img-element
+                                    <img
+                                      src={q.ownerId.avatarUrl}
+                                      alt={displayName}
+                                      className="w-11 h-11 rounded-full object-cover border-2 border-white shadow-sm shrink-0"
+                                    />
+                                  ) : (
+                                    <div className="w-11 h-11 rounded-full bg-[#38BDF8]/15 text-[#38BDF8] font-black flex items-center justify-center shrink-0">
+                                      {displayName.charAt(0).toUpperCase()}
+                                    </div>
+                                  )}
+                                  <div className="min-w-0">
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                      <p className="font-bold text-[#1E293B]">{displayName}</p>
+                                      {info?.verified && (
+                                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-full">
+                                          <CheckCircle size={12} weight="fill" />
+                                          Đối tác đã xác minh
+                                        </span>
+                                      )}
+                                    </div>
+                                    {info?.companyName && q.ownerId?.name && (
+                                      <p className="text-[12px] text-gray-400 mt-0.5">
+                                        Đại diện: {info.representativeName || q.ownerId.name}
+                                      </p>
+                                    )}
+                                    <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[12px] text-gray-500 mt-1">
+                                      {(info?.tourCount ?? 0) > 0 && (
+                                        <span className="flex items-center gap-1">
+                                          <MapPin size={12} /> Đang vận hành {info!.tourCount} tour
+                                        </span>
+                                      )}
+                                      {info?.address && (
+                                        <span className="truncate max-w-[260px]">{info.address}</span>
+                                      )}
+                                    </div>
+                                    {info?.description && (
+                                      <p className="text-[12px] text-gray-500 mt-1 line-clamp-2">
+                                        {info.description}
+                                      </p>
+                                    )}
+                                    <p className="text-[#38BDF8] font-extrabold text-lg mt-1">
+                                      {formatVND(q.offeredPrice)}
+                                    </p>
+                                    {q.message && (
+                                      <p className="text-sm text-gray-600 mt-1.5 bg-white/70 border border-sky-100 rounded-lg px-3 py-2 italic">
+                                        “{q.message}”
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                                <button
+                                  onClick={() => handleAcceptQuote(q._id)}
+                                  disabled={actionId === q._id}
+                                  className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl text-[13px] disabled:opacity-50 shrink-0 self-start sm:self-center"
+                                >
+                                  Chấp nhận báo giá
+                                </button>
+                              </div>
+                            );
+                          })}
                         </div>
                       )}
                     </div>

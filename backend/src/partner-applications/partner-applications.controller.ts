@@ -13,6 +13,7 @@ import {
 import type { Response } from 'express';
 import { PartnerApplicationsService } from './partner-applications.service';
 import { CreatePartnerApplicationDto } from './dto/create-partner-application.dto';
+import { UpdateCompanyProfileDto } from './dto/update-company-profile.dto';
 import { RejectPartnerApplicationDto } from './dto/reject-partner-application.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
@@ -38,6 +39,20 @@ export class PartnerApplicationsController {
       req.user.id,
     );
     return { success: true, data };
+  }
+
+  @Patch('my')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('tour_owner')
+  async updateMyCompanyProfile(
+    @Body() dto: UpdateCompanyProfileDto,
+    @Request() req: any,
+  ) {
+    const data = await this.partnerApplicationsService.updateCompanyProfile(
+      req.user.id,
+      dto,
+    );
+    return { success: true, data, message: 'Đã cập nhật hồ sơ công ty' };
   }
 
   @Get()

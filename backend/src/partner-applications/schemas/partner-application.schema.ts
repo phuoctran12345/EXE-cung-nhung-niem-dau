@@ -20,6 +20,10 @@ export class PartnerApplication {
   @Prop()
   website?: string;
 
+  // Giới thiệu ngắn về công ty (hiển thị công khai cho khách hàng)
+  @Prop()
+  description?: string;
+
   @Prop()
   licenseUrl?: string;
 

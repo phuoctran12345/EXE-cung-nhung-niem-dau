@@ -40,6 +40,14 @@ export class UsersService {
     return this.userModel.findById(id).exec();
   }
 
+  async updateAvatar(id: string, avatarUrl: string): Promise<User> {
+    const user = await this.userModel
+      .findByIdAndUpdate(id, { avatarUrl }, { new: true })
+      .exec();
+    if (!user) throw new NotFoundException('Không tìm thấy người dùng');
+    return user;
+  }
+
   async updateRole(id: string, role: string): Promise<User> {
     const user = await this.userModel
       .findByIdAndUpdate(id, { role, status: 'active' }, { new: true })

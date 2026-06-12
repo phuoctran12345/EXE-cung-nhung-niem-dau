@@ -10,6 +10,11 @@ import {
   PrivateTourQuote,
   PrivateTourQuoteSchema,
 } from './schemas/private-tour-quote.schema';
+import {
+  PartnerApplication,
+  PartnerApplicationSchema,
+} from '../partner-applications/schemas/partner-application.schema';
+import { Tour, TourSchema } from '../tours/schemas/tour.schema';
 import { WalletsModule } from '../wallets/wallets.module';
 
 @Module({
@@ -17,6 +22,8 @@ import { WalletsModule } from '../wallets/wallets.module';
     MongooseModule.forFeature([
       { name: PrivateTourRequest.name, schema: PrivateTourRequestSchema },
       { name: PrivateTourQuote.name, schema: PrivateTourQuoteSchema },
+      { name: PartnerApplication.name, schema: PartnerApplicationSchema },
+      { name: Tour.name, schema: TourSchema },
     ]),
     WalletsModule,
   ],

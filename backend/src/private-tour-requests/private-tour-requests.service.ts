@@ -15,6 +15,11 @@ import {
   PrivateTourQuote,
   PrivateTourQuoteDocument,
 } from './schemas/private-tour-quote.schema';
+import {
+  PartnerApplication,
+  PartnerApplicationDocument,
+} from '../partner-applications/schemas/partner-application.schema';
+import { Tour, TourDocument } from '../tours/schemas/tour.schema';
 import { WalletsService } from '../wallets/wallets.service';
 
 @Injectable()
@@ -27,6 +32,10 @@ export class PrivateTourRequestsService {
     private requestModel: Model<PrivateTourRequestDocument>,
     @InjectModel(PrivateTourQuote.name)
     private quoteModel: Model<PrivateTourQuoteDocument>,
+    @InjectModel(PartnerApplication.name)
+    private partnerApplicationModel: Model<PartnerApplicationDocument>,
+    @InjectModel(Tour.name)
+    private tourModel: Model<TourDocument>,
     private configService: ConfigService,
     private walletsService: WalletsService,
   ) {
@@ -67,16 +76,69 @@ export class PrivateTourRequestsService {
       .sort({ createdAt: -1 })
       .exec();
 
-    return Promise.all(
+    // Không trả email/phone của owner cho khách để tránh giao dịch ngoài nền tảng
+    const enriched = await Promise.all(
       requests.map(async (req) => {
         const quotes = await this.quoteModel
           .find({ requestId: req._id })
-          .populate('ownerId', 'name email avatarUrl')
+          .populate('ownerId', 'name avatarUrl')
           .sort({ createdAt: -1 })
+          .lean()
           .exec();
         return { ...req.toObject(), quotes };
       }),
     );
+
+    // Bổ sung thông tin công ty lữ hành (đã được duyệt) cho từng báo giá
+    const ownerIds = new Set<string>();
+    for (const req of enriched) {
+      for (const quote of req.quotes as any[]) {
+        const oid = quote.ownerId?._id?.toString();
+        if (oid) ownerIds.add(oid);
+      }
+    }
+
+    if (ownerIds.size > 0) {
+      const ids = [...ownerIds].map((id) => new Types.ObjectId(id));
+      const [applications, tourCounts] = await Promise.all([
+        this.partnerApplicationModel
+          .find({ userId: { $in: ids }, status: 'approved' })
+          .select('userId companyName address website description representativeName')
+          .lean()
+          .exec(),
+        this.tourModel.aggregate([
+          { $match: { ownerId: { $in: ids }, status: 'approved' } },
+          { $group: { _id: '$ownerId', count: { $sum: 1 } } },
+        ]),
+      ]);
+
+      const appByOwner = new Map(
+        applications.map((a) => [a.userId.toString(), a]),
+      );
+      const tourCountByOwner = new Map(
+        tourCounts.map((t) => [t._id.toString(), t.count as number]),
+      );
+
+      for (const req of enriched) {
+        req.quotes = (req.quotes as any[]).map((quote) => {
+          const oid = quote.ownerId?._id?.toString();
+          const app = oid ? appByOwner.get(oid) : undefined;
+          return {
+            ...quote,
+            ownerInfo: {
+              verified: !!app,
+              companyName: app?.companyName,
+              address: app?.address,
+              description: app?.description,
+              representativeName: app?.representativeName,
+              tourCount: oid ? (tourCountByOwner.get(oid) ?? 0) : 0,
+            },
+          };
+        });
+      }
+    }
+
+    return enriched;
   }
 
   async findOpenForOwners(): Promise<PrivateTourRequest[]> {

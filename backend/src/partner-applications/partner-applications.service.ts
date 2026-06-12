@@ -10,6 +10,7 @@ import {
   PartnerApplicationDocument,
 } from './schemas/partner-application.schema';
 import { CreatePartnerApplicationDto } from './dto/create-partner-application.dto';
+import { UpdateCompanyProfileDto } from './dto/update-company-profile.dto';
 import { UsersService } from '../users/users.service';
 import { CloudinaryService } from '../common/cloudinary/cloudinary.service';
 
@@ -56,6 +57,39 @@ export class PartnerApplicationsService {
       .findOne({ userId: new Types.ObjectId(userId) })
       .sort({ createdAt: -1 })
       .exec();
+  }
+
+  // Owner tự cập nhật thông tin công khai của công ty (chỉ hồ sơ đã duyệt)
+  async updateCompanyProfile(userId: string, dto: UpdateCompanyProfileDto) {
+    const application = await this.applicationModel
+      .findOne({ userId: new Types.ObjectId(userId), status: 'approved' })
+      .sort({ createdAt: -1 })
+      .exec();
+    if (!application) {
+      throw new BadRequestException(
+        'Chỉ đối tác có hồ sơ đã được duyệt mới có thể chỉnh sửa hồ sơ công ty.',
+      );
+    }
+
+    if (dto.address !== undefined) application.address = dto.address.trim();
+    if (dto.website !== undefined) application.website = dto.website.trim();
+    if (dto.description !== undefined)
+      application.description = dto.description.trim();
+    if (dto.representativeName !== undefined && dto.representativeName.trim()) {
+      application.representativeName = dto.representativeName.trim();
+    }
+
+    if (!application.address) {
+      throw new BadRequestException('Địa chỉ không được để trống.');
+    }
+
+    await application.save();
+
+    if (dto.avatarUrl !== undefined && dto.avatarUrl.trim()) {
+      await this.usersService.updateAvatar(userId, dto.avatarUrl.trim());
+    }
+
+    return application;
   }
 
   async findAll(status?: string) {

@@ -14,7 +14,8 @@ import {
   ChartLineUp,
   Ticket,
   MapTrifold,
-  Wallet
+  Wallet,
+  Buildings
 } from "@phosphor-icons/react";
 
 export default function OwnerLayout({ children }: { children: ReactNode }) {
@@ -61,6 +62,7 @@ export default function OwnerLayout({ children }: { children: ReactNode }) {
           <OwnerSidebarLink href="/owner/bookings" icon={<Users size={22} />} label="Danh sách Khách hàng" />
           <OwnerSidebarLink href="/owner/private-tours" icon={<MapTrifold size={22} />} label="Tour Cá Nhân" />
           <OwnerSidebarLink href="/owner/wallet" icon={<Wallet size={22} />} label="Ví của tôi" />
+          <OwnerSidebarLink href="/owner/company-profile" icon={<Buildings size={22} />} label="Hồ sơ công ty" />
         </nav>
 
         <div className="p-6 border-t border-white/5 space-y-4">

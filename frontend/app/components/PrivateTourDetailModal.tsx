@@ -128,6 +128,11 @@ export default function PrivateTourDetailModal({ request, myUserId, onClose }: P
   const totalDays = destinations.reduce((sum, d) => sum + d.days, 0);
   const totalNights = destinations.reduce((sum, d) => sum + d.nights, 0);
 
+  // Hiển thị đủ tất cả các ngày của tour, kể cả ngày chưa có hoạt động
+  const maxActivityDay = activities.reduce((max, a) => Math.max(max, a.day), 0);
+  const scheduleDayCount = Math.max(totalDays, maxActivityDay);
+  const scheduleDays = Array.from({ length: scheduleDayCount }, (_, i) => i + 1);
+
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-6">
       <div
@@ -244,20 +249,18 @@ export default function PrivateTourDetailModal({ request, myUserId, onClose }: P
           )}
 
           {/* Hoạt động */}
-          {activities.length > 0 && (
+          {scheduleDays.length > 0 && (
             <section>
               <h3 className="text-[12px] font-bold text-gray-400 uppercase tracking-wide mb-3">
                 Lịch hoạt động ({activities.length})
               </h3>
               <div className="space-y-4">
-                {Object.keys(activitiesByDay)
-                  .map(Number)
-                  .sort((a, b) => a - b)
-                  .map((day) => (
-                    <div key={day}>
-                      <p className="text-[13px] font-bold text-[#38BDF8] mb-2">Ngày {day}</p>
-                      <div className="space-y-2 pl-1">
-                        {activitiesByDay[day].map((act, i) => (
+                {scheduleDays.map((day) => (
+                  <div key={day}>
+                    <p className="text-[13px] font-bold text-[#38BDF8] mb-2">Ngày {day}</p>
+                    <div className="space-y-2 pl-1">
+                      {activitiesByDay[day]?.length ? (
+                        activitiesByDay[day].map((act, i) => (
                           <div
                             key={`${day}-${act.time}-${i}`}
                             className="flex gap-3 p-3 rounded-xl bg-sky-50/60 border border-sky-100"
@@ -277,10 +280,17 @@ export default function PrivateTourDetailModal({ request, myUserId, onClose }: P
                               </span>
                             )}
                           </div>
-                        ))}
-                      </div>
+                        ))
+                      ) : (
+                        <div className="p-3 rounded-xl bg-gray-50 border border-dashed border-gray-200">
+                          <p className="text-[13px] text-gray-400 italic">
+                            Chưa có lịch trình cụ thể
+                          </p>
+                        </div>
+                      )}
                     </div>
-                  ))}
+                  </div>
+                ))}
               </div>
               {totalActivityPrice > 0 && (
                 <p className="text-[12px] text-gray-400 mt-3 text-right">
