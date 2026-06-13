@@ -42,7 +42,7 @@ export default function TourDetailPage() {
   useEffect(() => {
     const fetchTourDetail = async () => {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4001/api";
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "/api";
         const res = await fetch(`${apiUrl}/tours/${id}`);
         const data = await res.json();
         setTour(data);

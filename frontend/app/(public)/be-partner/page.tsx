@@ -44,7 +44,7 @@ export default function BecomePartnerPage() {
     setUploading(true);
     setError("");
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4001/api";
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "/api";
       const body = new FormData();
       body.append("files", file);
 

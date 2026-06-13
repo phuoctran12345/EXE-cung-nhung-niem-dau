@@ -43,7 +43,7 @@ export default function PrivateTourPage() {
 
   // Fetch danh sách địa điểm khi mount
   useEffect(() => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4001/api";
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "/api";
     fetch(`${apiUrl}/tours/destinations`)
       .then(res => res.json())
       .then(data => {
@@ -144,7 +144,7 @@ export default function PrivateTourPage() {
     setDurationMap(newMap);
 
     // Fetch hoạt động của địa điểm vừa chọn
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4001/api";
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "/api";
     fetch(`${apiUrl}/tours/destinations/${dest.id}/activities`)
       .then(res => res.json())
       .then(data => {
@@ -563,7 +563,7 @@ export default function PrivateTourPage() {
                 };
 
                 try {
-                  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4001/api";
+                  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "/api";
                   const res = await fetch(`${apiUrl}/private-tour-requests`, {
                     method: "POST",
                     headers: {

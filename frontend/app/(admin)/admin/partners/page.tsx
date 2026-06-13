@@ -215,7 +215,7 @@ export default function AdminPartnersPage() {
   const [rejectReason, setRejectReason] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4001/api";
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "/api";
 
   const fetchApplications = useCallback(async () => {
     const token = localStorage.getItem("token");

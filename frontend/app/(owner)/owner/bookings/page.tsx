@@ -20,7 +20,7 @@ export default function OwnerBookingsPage() {
     const fetchBookings = async () => {
       const token = localStorage.getItem("token");
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4001/api";
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "/api";
         const res = await fetch(`${apiUrl}/bookings/owner/all-bookings`, {
           headers: { Authorization: `Bearer ${token}` },
         });

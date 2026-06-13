@@ -112,7 +112,7 @@ export default function CreateTourPage() {
 
     try {
       const token = localStorage.getItem("token");
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4001/api";
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "/api";
       const res = await fetch(`${apiUrl}/uploads/images`, {
         method: "POST",
         headers: {
@@ -143,7 +143,7 @@ export default function CreateTourPage() {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4001/api";
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "/api";
       const res = await fetch(`${apiUrl}/tours`, {
         method: "POST",
         headers: {

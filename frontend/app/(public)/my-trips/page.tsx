@@ -39,7 +39,7 @@ export default function MyTripsPage() {
           return;
         }
 
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4001/api";
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "/api";
         const res = await fetch(`${apiUrl}/bookings/my-history`, {
           headers: {
             "Authorization": `Bearer ${token}`

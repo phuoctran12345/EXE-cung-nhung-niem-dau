@@ -47,7 +47,7 @@ export default function ProfilePage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const apiUrl = () => process.env.NEXT_PUBLIC_API_URL || "http://localhost:4001/api";
+  const apiUrl = () => process.env.NEXT_PUBLIC_API_URL || "/api";
 
   useEffect(() => {
     const token = localStorage.getItem("token");

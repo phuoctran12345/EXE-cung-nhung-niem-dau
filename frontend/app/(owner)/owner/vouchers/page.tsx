@@ -45,7 +45,7 @@ type FormState = {
   tourIds: string[];
 };
 
-const apiUrl = () => process.env.NEXT_PUBLIC_API_URL || "http://localhost:4001/api";
+const apiUrl = () => process.env.NEXT_PUBLIC_API_URL || "/api";
 
 const emptyForm = (): FormState => ({
   code: "",

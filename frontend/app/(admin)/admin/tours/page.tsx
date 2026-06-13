@@ -31,7 +31,7 @@ export default function AdminTourManagement() {
     const fetchTours = async () => {
       const token = localStorage.getItem("token");
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4001/api";
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "/api";
         const res = await fetch(`${apiUrl}/tours/admin/all`, {
           headers: { "Authorization": `Bearer ${token}` }
         });
@@ -50,7 +50,7 @@ export default function AdminTourManagement() {
   const updateStatus = async (id: string, status: 'approved' | 'rejected') => {
     const token = localStorage.getItem("token");
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4001/api";
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "/api";
       const res = await fetch(`${apiUrl}/tours/${id}/status`, {
         method: "PATCH",
         headers: { 

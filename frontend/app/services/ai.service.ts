@@ -1,4 +1,4 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4001/api";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "/api";
 
 /**
  * Hàm gọi API để lấy gợi ý lịch trình từ AI

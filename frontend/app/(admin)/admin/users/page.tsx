@@ -28,7 +28,7 @@ export default function AdminUsersManagement() {
     const fetchUsers = async () => {
       const token = localStorage.getItem("token");
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4001/api";
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "/api";
         const res = await fetch(`${apiUrl}/users`, {
           headers: { "Authorization": `Bearer ${token}` }
         });
@@ -47,7 +47,7 @@ export default function AdminUsersManagement() {
     const token = localStorage.getItem("token");
     const newStatus = currentStatus === 'locked' ? 'active' : 'locked';
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4001/api";
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "/api";
       const res = await fetch(`${apiUrl}/users/${id}/status`, {
         method: "PATCH",
         headers: { 

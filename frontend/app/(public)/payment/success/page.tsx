@@ -20,7 +20,7 @@ function SuccessContent() {
     const confirmPayment = async () => {
       if (!orderCode) return;
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4001/api";
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "/api";
         await new Promise(resolve => setTimeout(resolve, isFreeOrder ? 800 : 2000));
 
         const confirmUrl = paymentType === "private"

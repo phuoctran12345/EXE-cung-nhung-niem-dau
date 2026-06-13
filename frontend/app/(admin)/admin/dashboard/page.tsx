@@ -31,7 +31,7 @@ export default function AdminDashboard() {
       if (!token) return;
 
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4001/api";
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "/api";
         
         // 1. Lấy danh sách toàn bộ các tour
         const resTours = await fetch(`${apiUrl}/tours/admin/all`, {

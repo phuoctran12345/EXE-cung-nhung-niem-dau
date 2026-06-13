@@ -18,7 +18,7 @@ export default function OwnerPrivateToursPage() {
   const [submitting, setSubmitting] = useState<string | null>(null);
   const [myUserId, setMyUserId] = useState<string>("");
 
-  const apiUrl = () => process.env.NEXT_PUBLIC_API_URL || "http://localhost:4001/api";
+  const apiUrl = () => process.env.NEXT_PUBLIC_API_URL || "/api";
 
   useEffect(() => {
     const userStr = localStorage.getItem("user");

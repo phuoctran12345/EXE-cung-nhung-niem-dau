@@ -190,7 +190,7 @@ export default function PartnerContractPage() {
       const formData = new FormData();
       formData.append("files", pdfFile);
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4001/api";
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "/api";
       const uploadRes = await fetch(`${apiUrl}/uploads/images`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },

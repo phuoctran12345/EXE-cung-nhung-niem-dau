@@ -42,7 +42,7 @@ export default function LoginModal({ isOpen, onClose }: { isOpen: boolean; onClo
   const handleGoogleSuccess = async (res: any) => {
     console.log(">>> [AUTH] Google Success", res);
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4001/api";
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "/api";
       const result = await fetch(`${apiUrl}/auth/google`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

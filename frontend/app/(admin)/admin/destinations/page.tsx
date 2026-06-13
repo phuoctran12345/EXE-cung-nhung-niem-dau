@@ -67,7 +67,7 @@ function normalizeDuration(value: number | string): number {
 }
 
 export default function AdminDestinationsPage() {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4001/api";
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "/api";
 
   const [destinations, setDestinations] = useState<Destination[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);

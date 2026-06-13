@@ -25,7 +25,7 @@ export default function ToursPage() {
   useEffect(() => {
     const fetchTours = async () => {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4001/api";
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "/api";
         const res = await fetch(`${apiUrl}/tours`);
         const data = await res.json();
         setTours(data);
@@ -43,7 +43,7 @@ export default function ToursPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4001/api";
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "/api";
       const res = await fetch(`${apiUrl}/tours?search=${searchQuery}`);
       const data = await res.json();
       setTours(data);

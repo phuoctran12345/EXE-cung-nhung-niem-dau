@@ -33,7 +33,7 @@ export default function OwnerDashboard() {
       if (!token) return;
 
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4001/api";
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "/api";
         const res = await fetch(`${apiUrl}/wallets/owner/dashboard-stats`, {
           headers: { Authorization: `Bearer ${token}` },
         });

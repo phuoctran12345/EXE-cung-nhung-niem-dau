@@ -34,7 +34,7 @@ export default function BookingForm({ isOpen, onClose, tour, participants: initi
       setAppliedVoucher(null);
       const token = localStorage.getItem("token");
       if (token) {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4001/api";
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "/api";
         fetch(`${apiUrl}/wallets/me`, {
           headers: { Authorization: `Bearer ${token}` },
         })
@@ -90,7 +90,7 @@ export default function BookingForm({ isOpen, onClose, tour, participants: initi
     setVoucherLoading(true);
     setError(null);
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4001/api";
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "/api";
       const res = await fetch(`${apiUrl}/vouchers/validate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -147,7 +147,7 @@ export default function BookingForm({ isOpen, onClose, tour, participants: initi
     setLoading(true);
     setError(null);
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4001/api";
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "/api";
       const body: Record<string, unknown> = {
         tourId,
         numberOfParticipants: participants,

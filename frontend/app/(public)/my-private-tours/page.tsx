@@ -56,7 +56,7 @@ export default function MyPrivateToursPage() {
   const [loading, setLoading] = useState(true);
   const [actionId, setActionId] = useState<string | null>(null);
 
-  const apiUrl = () => process.env.NEXT_PUBLIC_API_URL || "http://localhost:4001/api";
+  const apiUrl = () => process.env.NEXT_PUBLIC_API_URL || "/api";
 
   const fetchRequests = async () => {
     const token = localStorage.getItem("token");
